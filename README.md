@@ -5,13 +5,14 @@ Treino de conversação em inglês com o modo de voz da app do Claude, numa úni
 ## O que faz
 
 - **Falar** — escolhe o tipo de conversa (livre, situação real, dar opinião, contar uma história,
-  revisão de erros, teste de nível) e o tema. A app prepara a mensagem para o Claude, com o teu nível,
+  conta 3 vezes, ouvir e responder, revisão de erros, teste de nível) e o tema. A app prepara a mensagem para o Claude, com o teu nível,
   as palavras que estás a aprender e os erros que tens repetido. Copias, colas no Claude e falas.
   No fim dizes “end session”, o Claude escreve um relatório e colas-o de volta.
 - **Rever** — os erros e as palavras novas de cada relatório viram cartões de repetição espaçada.
 - **Progresso** — minutos a falar por semana, nível estimado pelo Claude, erros que mais te escapam
   e o histórico das conversas.
-- **Guia** — kit de frases para conversar, falsos amigos, pronúncia para quem fala português, ajustes.
+- **Guia** — kit de frases para conversar, falsos amigos, pronúncia para quem fala português,
+  treino de pronúncia com gravação (shadowing), lembrete diário no calendário, ajustes.
 
 ## Onde ficam os dados
 

@@ -15,7 +15,7 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
 <!-- Só o GitHub (dados) pode ser contactado. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src https://api.github.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src https://api.github.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <style>
   html { -webkit-text-size-adjust: 100%; }
   body, h1, h2, h3, p, ol, ul { margin: 0; }
@@ -195,9 +195,9 @@
     </div>
 
     <div class="card" id="cardSubir" hidden>
-      <h3>O Claude acha que já estás acima do teu nível</h3>
+      <h3 id="subirTitulo">O Claude acha que já estás acima do teu nível</h3>
       <p class="small muted" id="subirTxt"></p>
-      <div class="row"><button class="btn primary sm" type="button" id="btnSubir">Subir de nível</button><button class="btn ghost sm" type="button" id="btnNaoSubir">Ainda não</button></div>
+      <div class="row"><button class="btn primary sm" type="button" id="btnSubir">Mudar de nível</button><button class="btn ghost sm" type="button" id="btnNaoSubir">Ainda não</button></div>
     </div>
 
     <div class="card">
@@ -351,6 +351,36 @@
       <details><summary>Pronúncia para quem fala português</summary><div class="inner" id="pronuncia"></div></details>
     </div>
     <div class="card">
+      <h2>Treino de pronúncia</h2>
+      <p class="small muted">Shadowing: ouves a frase, repetes por cima dela ao mesmo ritmo, gravas-te e comparas. As frases vêm das tuas correções e da lista de pronúncia. A gravação fica só neste telemóvel e apaga-se quando passas à frase seguinte.</p>
+      <div class="fix" style="gap:6px">
+        <span class="small muted" id="shOrigem"></span>
+        <p class="en" lang="en" id="shFrase" style="font-size:1.2rem"></p>
+      </div>
+      <div class="row">
+        <button class="btn sm" type="button" id="shOuvir">Ouvir</button>
+        <button class="btn sm" type="button" id="shDevagar">Devagar</button>
+        <button class="btn sm primary" type="button" id="shGravar">Gravar-me</button>
+        <button class="btn sm" type="button" id="shOuvirMe" hidden>Ouvir-me</button>
+        <button class="btn sm ghost" type="button" id="shProxima">Próxima frase</button>
+      </div>
+      <p class="small muted" id="shNota" hidden></p>
+    </div>
+    <div class="card">
+      <h2>Lembrete diário</h2>
+      <p class="small">O lembrete mais fiável é o calendário do telemóvel: avisa à hora certa mesmo com a app fechada. Um toque no aviso abre a Fluente pronta para falar.</p>
+      <label class="fl">Todos os dias às<input type="time" id="horaLembrete" value="19:00"></label>
+      <button class="btn primary" type="button" id="btnIcs">Criar lembrete (.ics)</button>
+      <details><summary class="small">Como pôr no Proton Calendar</summary><div class="inner small">
+        <ol style="padding-left:18px;display:grid;gap:4px">
+          <li>No <a href="https://calendar.proton.me/" target="_blank" rel="noopener">Proton Calendar</a>, cria um calendário chamado <code>Fluente</code>.</li>
+          <li>Aqui, toca em <em>Criar lembrete</em> e guarda o ficheiro <code>fluente.ics</code>.</li>
+          <li>No site do Proton, no computador (a app do telemóvel só importa do Google): <em>Definições → Calendários → Importar</em>, escolhe <code>fluente.ics</code> e o calendário <code>Fluente</code>.</li>
+        </ol>
+        <p class="muted">Para mudar a hora: apaga o calendário <code>Fluente</code>, cria-o de novo e volta a importar.</p>
+      </div></details>
+    </div>
+    <div class="card">
       <details><summary>Como usar o modo de voz do Claude</summary><div class="inner small">
         <ol style="padding-left:18px;display:grid;gap:6px">
           <li>Na Fluente, escolhe o tipo de conversa e toca em <b>Copiar e abrir o Claude</b>.</li>
@@ -442,6 +472,7 @@ const MODOS = [
   {id: "debate", t: "Dar opinião", d: "O Claude lança uma afirmação polémica e obriga-te a justificar o que pensas."},
   {id: "historia", t: "Contar uma história", d: "Contas algo que te aconteceu. Treina os tempos do passado."},
   {id: "conta3", t: "Conta 3 vezes", d: "Contas a mesma história três vezes, cada vez mais curta e mais depressa. Treina a fluidez. O Claude não tem relógio e guia-se pelo tamanho; se quiseres rigor, usa o cronómetro do telemóvel."},
+  {id: "ouvir", t: "Ouvir e responder", d: "O Claude conta uma história curta a falar ao ritmo normal e depois faz-te perguntas sobre ela. Treina a compreensão."},
   {id: "revisao", t: "Revisão de erros", d: "O Claude cria situações que te obrigam a usar o que mais erras."},
   {id: "nivel", t: "Teste de nível", d: "Dez minutos a subir a dificuldade. No fim, o Claude estima o teu nível (A2 a C1)."}
 ];
@@ -752,13 +783,13 @@ async function repoVisivel(c){
 /* ================= Voz (revisões) ================= */
 const ICON_SOM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
 const temVoz = "speechSynthesis" in window;
-function falar(txt){
+function falar(txt, rate){
   if (!temVoz) return toast("Este browser não tem voz inglesa.");
   const u = new SpeechSynthesisUtterance(txt);
   const lang = S.cfg.voz || "en-GB";
   const vozes = speechSynthesis.getVoices();
   u.voice = vozes.find(v => v.lang.replace("_", "-") === lang) || vozes.find(v => /^en/i.test(v.lang)) || null;
-  u.lang = lang; u.rate = 0.92;
+  u.lang = lang; u.rate = rate || 0.92;
   speechSynthesis.cancel(); speechSynthesis.speak(u);
 }
 if (temVoz) speechSynthesis.getVoices();
@@ -807,7 +838,7 @@ function novoCartao(tipo, frente, verso, ex, pt){
 let modo = "livre", temaId = "", inicioConversa = ls.get("fluente-inicio") || null;
 
 // "Conta 3 vezes" usa os temas das histórias e da conversa livre: precisa de algo para contar.
-function temasDoModo(m){ return m === "conta3" ? TEMAS.filter(t => t.m === "historia" || t.m === "livre") : TEMAS.filter(t => t.m === m); }
+function temasDoModo(m){ if (m === "ouvir") return TEMAS.filter(t => t.m === "livre" || t.m === "debate"); return m === "conta3" ? TEMAS.filter(t => t.m === "historia" || t.m === "livre") : TEMAS.filter(t => t.m === m); }
 function temaAtual(){
   if (temaId === "__livre") { const v = norm(el("temaLivre").value); return v ? {id: "livre-" + hashId(v), m: modo, t: v, en: v} : null; }
   return TEMAS.find(t => t.id === temaId) || null;
@@ -861,6 +892,7 @@ function descricaoSessao(t){
     case "situacao": return "a role-play. " + (t ? t.en : "Invent a realistic everyday situation for me.") + " Stay in character and make it a bit challenging, with one small unexpected problem. When the situation is resolved, step out of character, tell me two phrases a native speaker would have used, and offer to run it again.";
     case "debate": return "a discussion. Start by saying this statement and asking what I think: \"" + (t ? t.en : "Choose a debatable statement about everyday life") + "\". Take the opposite side to mine, push back politely, and make me justify my opinion with reasons and examples. Encourage me to use linking words (however, on the other hand, that's why).";
     case "conta3": return "a 4/3/2 fluency drill about " + tema + ". I will tell you the same thing three times. Round 1: about three minutes (roughly 300 words). Round 2: the same content in about two minutes (200 words). Round 3: in about ninety seconds (150 words). You can't see a clock, so judge by length. Before round 1, give me ten seconds of thinking time by asking one short question to set the scene. During a round, don't take a turn: if I pause, say only \"go on\" or \"mm-hm\". Between rounds, give no corrections, only say how much shorter the next round should be. After round 3, tell me in two or three sentences what got smoother from round 1 to round 3 (for example fewer pauses or better phrases), give me two corrections, then chat with me normally about the topic.";
+    case "ouvir": return "listening practice about " + tema + ". First, tell me a short invented story or news-style report on this topic, about 150 to 200 words, at a natural native speed, with a few useful expressions and one or two details that are easy to miss. Say it is invented. Don't ask me anything before you finish. Then ask me three comprehension questions, one at a time, from easy to detailed. If I get one wrong, give me a hint and let me try again before giving the answer. If I ask what a word means, explain it simply in English and add it to \"palavras\" in the report. After the questions, ask my opinion and have a normal conversation about the topic.";
     case "historia": return "storytelling. Ask me to tell you about " + tema + ". Let me tell it, then ask follow-up questions that make me use different past tenses (past simple, past continuous, past perfect, used to).";
     case "revisao": return "review of my recurring mistakes, listed below. For each one, create a short situation or question that makes me use the correct structure, two or three times, in different contexts. Don't tell me which mistake you're targeting until I get it right.";
     case "nivel": return "a speaking level check of about ten minutes. Start with easy personal questions and gradually make them harder: describing, past experiences, future plans, hypotheticals (what would you do if…), and finally an abstract opinion. Don't correct me during the check. When I say \"end session\", explain your CEFR estimate in the three feedback lines.";
@@ -874,6 +906,7 @@ const FOCO_MODO = [
   [/present perfect|past simple|passado|past tense|tempos verbais|used to|past continuous/i, "historia"],
   [/fluên|fluidez|hesita|pausa|rapidez|velocidade|à-vontade|fluency/i, "conta3"],
   [/opini|argument|justific|ligação|conectores|linking|however|debate/i, "debate"],
+  [/compreens|perceber|ouvir|listening|entender/i, "ouvir"],
   [/vocabul|palavras|expressões|phrasal|collocation|make vs do|make\/do/i, "situacao"]
 ];
 function temaDoDia(){
@@ -885,7 +918,7 @@ function temaDoDia(){
   // não repetir o mesmo tipo três dias seguidos
   const ult2 = S.sessoes.slice(-2).map(x => x.modo);
   if (m && ult2.length === 2 && ult2.every(x => x === m)) { m = null; motivo = ""; }
-  if (!m) { const rot = ["livre", "situacao", "historia", "debate", "conta3"]; m = rot[dias % rot.length]; }
+  if (!m) { const rot = ["livre", "situacao", "historia", "debate", "conta3", "ouvir"]; m = rot[dias % rot.length]; }
   const recentes = new Set(S.sessoes.slice(-12).map(s => s.temaId));
   const doModo = temasDoModo(m).filter(t => NIVEIS.indexOf(t.n) <= idx);
   const ok = doModo.filter(t => !recentes.has(t.id));
@@ -995,9 +1028,18 @@ function renderHoje(){
   // subir de nível: as três últimas estimativas acima do nível atual
   const est = S.sessoes.filter(s => s.nivel).slice(-3);
   const idx = NIVEIS.indexOf(S.cfg.nivel);
-  const acima = est.length === 3 && est.every(s => NIVEIS.indexOf(s.nivel) > idx) && S.naoSubir < somaDias(hoje(), -14);
-  el("cardSubir").hidden = !acima;
-  if (acima) el("subirTxt").textContent = "Nas últimas três conversas estimou " + est.map(s => s.nivel).join(", ") + ". Subir para " + NIVEIS[idx + 1] + " torna as conversas um pouco mais exigentes.";
+  // três estimativas seguidas do mesmo lado do nível atual; "Ainda não" cala o aviso duas semanas
+  const acima = est.length === 3 && idx + 1 < NIVEIS.length && est.every(s => NIVEIS.indexOf(s.nivel) > idx);
+  const abaixo = est.length === 3 && idx > 0 && est.every(s => NIVEIS.indexOf(s.nivel) < idx);
+  const mostra = (acima || abaixo) && S.naoSubir < somaDias(hoje(), -14);
+  el("cardSubir").hidden = !mostra;
+  mudarPara = mostra ? NIVEIS[idx + (acima ? 1 : -1)] : "";
+  if (mostra){
+    el("subirTitulo").textContent = acima ? "O Claude acha que já estás acima do teu nível" : "As conversas parecem estar difíceis demais";
+    el("subirTxt").textContent = "Nas últimas três conversas o Claude estimou " + est.map(s => s.nivel).join(", ") + ", e o teu nível está em " + S.cfg.nivel + ". " +
+      (acima ? "Subir para " + mudarPara + " torna as conversas um pouco mais exigentes." : "Descer para " + mudarPara + " deixa-te falar mais e com menos esforço. Voltas a subir quando estiveres pronto.");
+    el("btnSubir").textContent = (acima ? "Subir para " : "Descer para ") + mudarPara;
+  }
   const b = el("badgeRev"); b.hidden = !dev; b.textContent = dev > 99 ? "99+" : dev;
 }
 
@@ -1164,6 +1206,7 @@ function renderGuia(){
   el("falsos").innerHTML = FALSOS.map(f => '<li><div><span class="en" lang="en"><b>' + esc(f[0]) + '</b> = ' + esc(f[1]) + '</span><span class="small muted">' + esc(f[2]) + '</span></div><button class="speak" type="button" data-falar="' + esc(f[0]) + '" aria-label="Ouvir">' + ICON_SOM + '</button></li>').join("");
   el("pronuncia").innerHTML = PRONUNCIA.map(p => '<div class="fix"><b>' + esc(p.t) + '</b><span class="small muted">' + esc(p.d) + '</span><div class="row" style="flex-wrap:nowrap;justify-content:space-between"><span class="en" lang="en">' + esc(p.ex) + '</span><button class="speak" type="button" data-falar="' + esc(p.ex) + '" aria-label="Ouvir">' + ICON_SOM + '</button></div></div>').join("");
   document.querySelectorAll("#v-guia [data-falar]").forEach(b => b.onclick = () => falar(b.dataset.falar));
+  renderShadowing();
   renderAjustes();
 }
 function renderSobre(){
@@ -1208,7 +1251,13 @@ window.addEventListener("hashchange", () => { const v = location.hash.slice(1); 
 
 el("btnHojeFalar").onclick = () => { const t = temaDoDia(); modo = t.modo; temaId = t.tema.id; mostrar("falar"); };
 el("btnHojeRever").onclick = () => mostrar("rever");
-el("btnSubir").onclick = () => { const i = NIVEIS.indexOf(S.cfg.nivel); registar([["cfg", {c: {nivel: NIVEIS[i + 1]}}]], "Subir de nível"); toast("Nível " + NIVEIS[i + 1] + ". Boa!"); };
+let mudarPara = "";
+el("btnSubir").onclick = () => {
+  if (!mudarPara) return;
+  const sobe = NIVEIS.indexOf(mudarPara) > NIVEIS.indexOf(S.cfg.nivel), n = mudarPara;
+  registar([["cfg", {c: {nivel: n}}], ["naoSubir", {dia: hoje()}]], sobe ? "Subir de nível" : "Descer de nível");
+  toast("Nível " + n + (sobe ? ". Boa!" : "."));
+};
 el("btnNaoSubir").onclick = () => registar([["naoSubir", {dia: hoje()}]], "Manter nível");
 
 el("modos").addEventListener("click", e => { const b = e.target.closest("[data-m]"); if (!b) return; modo = b.dataset.m; temaId = ""; renderFalar(); });
@@ -1303,6 +1352,75 @@ el("cfgDesligar").onclick = () => { cfg = {repo: cfg.repo, token: ""}; ls.set("f
 
 window.addEventListener("online", () => agendar(0));
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { if (fila.length) agendar(0); else if (online() && !enviando) carregar(); if (vista === "falar") renderFalar(); } });
+
+/* ================= Lembrete no calendário ================= */
+const APP_URL = "https://oakshift.github.io/fluente/";
+const icsTxt = s => String(s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+const icsFold = l => { const out = []; while (l.length > 73){ out.push(l.slice(0, 73)); l = " " + l.slice(73); } out.push(l); return out.join("\r\n"); };
+function gerarIcs(hora){
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+  const url = APP_URL + "#falar", titulo = "Inglês: 10 minutos a falar";
+  const L = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Fluente//PT", "CALSCALE:GREGORIAN", "X-WR-CALNAME:Fluente",
+    "BEGIN:VEVENT", "UID:fluente-diario@oakshift.github.io", "DTSTAMP:" + stamp,
+    "DTSTART:" + hoje().replace(/-/g, "") + "T" + hora.replace(":", "") + "00", "DURATION:PT15M", "RRULE:FREQ=DAILY",
+    "SUMMARY:" + icsTxt(titulo), "DESCRIPTION:" + icsTxt("Uma conversa com o Claude e a revisão do dia.\n\nAbrir: " + url), "URL:" + url,
+    "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsTxt(titulo), "TRIGGER:PT0M", "END:VALARM", "END:VEVENT", "END:VCALENDAR"];
+  return L.map(icsFold).join("\r\n") + "\r\n";
+}
+{ const v = ls.get("fluente-hora"); if (v) el("horaLembrete").value = v; }
+el("horaLembrete").addEventListener("change", () => ls.set("fluente-hora", el("horaLembrete").value));
+el("btnIcs").onclick = () => {
+  const blob = new Blob([gerarIcs(el("horaLembrete").value || "19:00")], {type: "text/calendar"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "fluente.ics";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  toast("Ficheiro criado. Importa-o no calendário.");
+};
+
+/* ================= Shadowing ================= */
+function frasesShadowing(){
+  const minhas = Object.values(S.cartoes).filter(c => c.tipo === "erro").map(c => ({t: c.verso, o: "Da tua correção"}));
+  const pron = PRONUNCIA.map(p => ({t: p.ex, o: "Pronúncia: " + p.t}));
+  const kit = KIT.flatMap(k => k.f.map(f => ({t: f[0], o: "Kit de conversa: " + k.c})));
+  return minhas.concat(pron, kit).filter(f => f.t.split(" ").length >= 3);
+}
+let shIdx = 0, shGravador = null, shAudio = null, shUrl = "";
+function shFrase(){ const l = frasesShadowing(); return l[shIdx % l.length]; }
+function renderShadowing(){
+  const f = shFrase();
+  el("shFrase").textContent = f.t; el("shOrigem").textContent = f.o;
+  el("shOuvirMe").hidden = !shUrl;
+}
+el("shOuvir").onclick = () => falar(shFrase().t);
+el("shDevagar").onclick = () => falar(shFrase().t, 0.7);
+el("shProxima").onclick = () => {
+  if (shUrl) { URL.revokeObjectURL(shUrl); shUrl = ""; }
+  const l = frasesShadowing(); shIdx = (shIdx + 1 + Math.floor(Math.random() * Math.min(5, l.length - 1))) % l.length;
+  el("shNota").hidden = true; renderShadowing();
+};
+el("shGravar").onclick = async () => {
+  if (shGravador && shGravador.state === "recording") { shGravador.stop(); return; }
+  if (!navigator.mediaDevices || !window.MediaRecorder) { el("shNota").hidden = false; el("shNota").textContent = "Este browser não deixa gravar. Experimenta no Chrome."; return; }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({audio: true}); }
+  catch (e) { el("shNota").hidden = false; el("shNota").textContent = "Sem acesso ao microfone. Autoriza-o nas definições do site no Chrome (cadeado → Permissões)."; return; }
+  const partes = [];
+  shGravador = new MediaRecorder(stream);
+  shGravador.ondataavailable = e => { if (e.data.size) partes.push(e.data); };
+  shGravador.onstop = () => {
+    stream.getTracks().forEach(t => t.stop());
+    if (shUrl) URL.revokeObjectURL(shUrl);
+    shUrl = URL.createObjectURL(new Blob(partes, {type: shGravador.mimeType || "audio/webm"}));
+    el("shGravar").textContent = "Gravar outra vez";
+    el("shNota").hidden = false; el("shNota").textContent = "Ouve-te e depois ouve o original. Repara no ritmo e nas sílabas fortes, mais do que em cada som.";
+    renderShadowing();
+  };
+  shGravador.start();
+  el("shGravar").textContent = "Parar";
+  el("shNota").hidden = false; el("shNota").textContent = "A gravar… diz a frase e toca em Parar.";
+};
+el("shOuvirMe").onclick = () => { if (!shUrl) return; if (shAudio) shAudio.pause(); shAudio = new Audio(shUrl); shAudio.play().catch(() => toast("Não consegui tocar a gravação.")); };
 
 /* ================= Arranque ================= */
 el("fraseOuvir").innerHTML = ICON_SOM;
