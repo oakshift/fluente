@@ -380,6 +380,7 @@
         <input type="text" id="cfgObjetivo" placeholder="Ex.: reuniões de trabalho, viajar, ajudar os filhos">
       </label>
       <label class="fl">Meta de minutos a falar por semana<input type="number" id="cfgMeta" min="10" max="1000" step="10" inputmode="numeric"></label>
+      <label class="fl">Cartões novos por dia, no máximo<input type="number" id="cfgNovos" min="1" max="50" inputmode="numeric"></label>
       <label class="fl">Sotaque da voz das revisões
         <select id="cfgVoz"><option value="en-GB">Britânico</option><option value="en-US">Americano</option></select>
       </label>
@@ -440,6 +441,7 @@ const MODOS = [
   {id: "situacao", t: "Situação real", d: "Role-play: o Claude faz de empregado, médico, rececionista… e tu resolves a situação."},
   {id: "debate", t: "Dar opinião", d: "O Claude lança uma afirmação polémica e obriga-te a justificar o que pensas."},
   {id: "historia", t: "Contar uma história", d: "Contas algo que te aconteceu. Treina os tempos do passado."},
+  {id: "conta3", t: "Conta 3 vezes", d: "Contas a mesma história três vezes, cada vez mais curta e mais depressa. Treina a fluidez. O Claude não tem relógio e guia-se pelo tamanho; se quiseres rigor, usa o cronómetro do telemóvel."},
   {id: "revisao", t: "Revisão de erros", d: "O Claude cria situações que te obrigam a usar o que mais erras."},
   {id: "nivel", t: "Teste de nível", d: "Dez minutos a subir a dificuldade. No fim, o Claude estima o teu nível (A2 a C1)."}
 ];
@@ -583,7 +585,7 @@ const ls = {
 
 /* ================= Dados ================= */
 function vazio(){
-  return {versao: 1, inicio: hoje(), cfg: {nivel: "B1", explic: "pt", objetivo: "", meta: 90, voz: "en-GB"},
+  return {versao: 1, inicio: hoje(), cfg: {nivel: "B1", explic: "pt", objetivo: "", meta: 90, voz: "en-GB", novosDia: 10},
           sessoes: [], cartoes: {}, ativ: {}, naoSubir: "", sobre: []};
 }
 function completo(d){
@@ -770,11 +772,26 @@ function proximo(c, nota){
   else if (nota === 2){ int = reps === 0 ? 1 : reps === 1 ? 3 : Math.round(int * ef); reps++; }
   else { int = reps === 0 ? 3 : Math.round(Math.max(int, 1) * ef * 1.3); ef += 0.15; reps++; }
   int = Math.min(int, 365);
-  return {int, ef: Math.round(ef * 100) / 100, reps, lapsos, prox: somaDias(hoje(), int), ult: hoje()};
+  const r = {int, ef: Math.round(ef * 100) / 100, reps, lapsos, prox: somaDias(hoje(), int), ult: hoje()};
+  if (!c.ult) r.primeira = hoje();   // dia em que o cartão entrou na revisão
+  return r;
 }
-const devidos = () => Object.values(S.cartoes).filter(c => (c.prox || "") <= hoje())
+/* Cartões já vistos entram todos; dos nunca vistos entram só os que cabem no limite diário,
+   pela ordem em que foram criados. Os outros esperam pelos dias seguintes. */
+const eNovo = c => !c.ult;
+function novosPorVer(){
+  const todos = Object.values(S.cartoes);
+  const jaHoje = todos.filter(c => c.primeira === hoje()).length;
+  return Math.max(0, (S.cfg.novosDia || 10) - jaHoje);
+}
+function emEspera(){ return Math.max(0, Object.values(S.cartoes).filter(eNovo).length - novosPorVer()); }
+function devidos(){
+  const todos = Object.values(S.cartoes);
+  const vistos = todos.filter(c => !eNovo(c) && (c.prox || "") <= hoje());
+  const novos = todos.filter(eNovo).sort((a, b) => (a.criado || "").localeCompare(b.criado || "") || a.id.localeCompare(b.id)).slice(0, novosPorVer());
   // os que falhaste agora mesmo ("Outra vez") vão para o fim da fila
-  .sort((a, b) => ((a.ult === hoje()) - (b.ult === hoje())) || (a.prox || "").localeCompare(b.prox || "") || (a.criado || "").localeCompare(b.criado || ""));
+  return vistos.concat(novos).sort((a, b) => ((a.ult === hoje()) - (b.ult === hoje())) || (eNovo(a) - eNovo(b)) || (a.prox || "").localeCompare(b.prox || "") || (a.criado || "").localeCompare(b.criado || ""));
+}
 const aprendido = c => (c.int || 0) >= 21;
 
 function novoCartao(tipo, frente, verso, ex, pt){
@@ -789,7 +806,8 @@ function novoCartao(tipo, frente, verso, ex, pt){
 /* ================= Mensagem para o Claude ================= */
 let modo = "livre", temaId = "", inicioConversa = ls.get("fluente-inicio") || null;
 
-function temasDoModo(m){ return TEMAS.filter(t => t.m === m); }
+// "Conta 3 vezes" usa os temas das histórias e da conversa livre: precisa de algo para contar.
+function temasDoModo(m){ return m === "conta3" ? TEMAS.filter(t => t.m === "historia" || t.m === "livre") : TEMAS.filter(t => t.m === m); }
 function temaAtual(){
   if (temaId === "__livre") { const v = norm(el("temaLivre").value); return v ? {id: "livre-" + hashId(v), m: modo, t: v, en: v} : null; }
   return TEMAS.find(t => t.id === temaId) || null;
@@ -842,6 +860,7 @@ function descricaoSessao(t){
     case "livre": return "a relaxed conversation about " + tema + ". Be curious, ask follow-up questions and share a little about yourself too.";
     case "situacao": return "a role-play. " + (t ? t.en : "Invent a realistic everyday situation for me.") + " Stay in character and make it a bit challenging, with one small unexpected problem. When the situation is resolved, step out of character, tell me two phrases a native speaker would have used, and offer to run it again.";
     case "debate": return "a discussion. Start by saying this statement and asking what I think: \"" + (t ? t.en : "Choose a debatable statement about everyday life") + "\". Take the opposite side to mine, push back politely, and make me justify my opinion with reasons and examples. Encourage me to use linking words (however, on the other hand, that's why).";
+    case "conta3": return "a 4/3/2 fluency drill about " + tema + ". I will tell you the same thing three times. Round 1: about three minutes (roughly 300 words). Round 2: the same content in about two minutes (200 words). Round 3: in about ninety seconds (150 words). You can't see a clock, so judge by length. Before round 1, give me ten seconds of thinking time by asking one short question to set the scene. During a round, don't take a turn: if I pause, say only \"go on\" or \"mm-hm\". Between rounds, give no corrections, only say how much shorter the next round should be. After round 3, tell me in two or three sentences what got smoother from round 1 to round 3 (for example fewer pauses or better phrases), give me two corrections, then chat with me normally about the topic.";
     case "historia": return "storytelling. Ask me to tell you about " + tema + ". Let me tell it, then ask follow-up questions that make me use different past tenses (past simple, past continuous, past perfect, used to).";
     case "revisao": return "review of my recurring mistakes, listed below. For each one, create a short situation or question that makes me use the correct structure, two or three times, in different contexts. Don't tell me which mistake you're targeting until I get it right.";
     case "nivel": return "a speaking level check of about ten minutes. Start with easy personal questions and gradually make them harder: describing, past experiences, future plans, hypotheticals (what would you do if…), and finally an abstract opinion. Don't correct me during the check. When I say \"end session\", explain your CEFR estimate in the three feedback lines.";
@@ -849,13 +868,29 @@ function descricaoSessao(t){
   return "a conversation about " + tema + ".";
 }
 
+/* O foco da última conversa escolhe o tipo de conversa de hoje. Sem foco reconhecido,
+   os tipos vão rodando de dia para dia. */
+const FOCO_MODO = [
+  [/present perfect|past simple|passado|past tense|tempos verbais|used to|past continuous/i, "historia"],
+  [/fluên|fluidez|hesita|pausa|rapidez|velocidade|à-vontade|fluency/i, "conta3"],
+  [/opini|argument|justific|ligação|conectores|linking|however|debate/i, "debate"],
+  [/vocabul|palavras|expressões|phrasal|collocation|make vs do|make\/do/i, "situacao"]
+];
 function temaDoDia(){
   const n = S.cfg.nivel, idx = NIVEIS.indexOf(n);
-  const recentes = new Set(S.sessoes.slice(-12).map(s => s.temaId));
-  const ok = TEMAS.filter(t => NIVEIS.indexOf(t.n) <= idx && !recentes.has(t.id));
-  const pool = ok.length ? ok : TEMAS.filter(t => NIVEIS.indexOf(t.n) <= idx);
   const dias = Math.round(deDia(hoje()) / 864e5);
-  return pool[dias % pool.length];
+  const ult = S.sessoes.filter(x => x.foco).slice(-1)[0];
+  let m = null, motivo = "";
+  if (ult) for (const [re, mm] of FOCO_MODO) if (re.test(ult.foco)) { m = mm; motivo = ult.foco; break; }
+  // não repetir o mesmo tipo três dias seguidos
+  const ult2 = S.sessoes.slice(-2).map(x => x.modo);
+  if (m && ult2.length === 2 && ult2.every(x => x === m)) { m = null; motivo = ""; }
+  if (!m) { const rot = ["livre", "situacao", "historia", "debate", "conta3"]; m = rot[dias % rot.length]; }
+  const recentes = new Set(S.sessoes.slice(-12).map(s => s.temaId));
+  const doModo = temasDoModo(m).filter(t => NIVEIS.indexOf(t.n) <= idx);
+  const ok = doModo.filter(t => !recentes.has(t.id));
+  const pool = ok.length ? ok : doModo.length ? doModo : temasDoModo(m);
+  return {tema: pool[dias % pool.length], modo: m, motivo};
 }
 
 /* ================= Ler o relatório ================= */
@@ -947,8 +982,8 @@ function renderHoje(){
   el("metaTxt").textContent = m + " / " + meta + " min";
   el("metaBar").style.width = Math.min(100, Math.round(m / meta * 100)) + "%";
   const t = temaDoDia();
-  el("hojeTema").textContent = t.t;
-  el("hojeTemaDesc").textContent = (MODOS.find(x => x.id === t.m) || {}).t + " · nível " + t.n + " ou acima";
+  el("hojeTema").textContent = t.tema.t;
+  el("hojeTemaDesc").textContent = (MODOS.find(x => x.id === t.modo) || {}).t + (t.motivo ? " · para treinar o que o Claude te pediu: " + t.motivo : "");
   el("revHojeTxt").textContent = dev ? dev + " para hoje" : "Nada para hoje";
   el("btnHojeRever").disabled = !dev;
   el("btnHojeRever").textContent = dev ? "Rever agora" : "Tudo em dia";
@@ -1008,7 +1043,7 @@ function renderRever(){
   if (!revAtual){
     const total = Object.keys(S.cartoes).length;
     area.innerHTML = '<div class="flash"><div class="back"><p class="front">' + (total ? "Tudo revisto por hoje" : "Ainda não há cartões") + '</p>' +
-      '<p class="small muted">' + (total ? (revFeitos ? revFeitos + " revistos nesta sessão. " : "") + "Amanhã há mais." : "Depois de cada conversa, os erros e as palavras novas do relatório aparecem aqui. Também podes acrescentar palavras à mão.") + '</p></div></div>';
+      '<p class="small muted">' + (total ? (revFeitos ? revFeitos + " revistos nesta sessão. " : "") + (emEspera() ? emEspera() + " cartões novos esperam pelos próximos dias (máximo de " + (S.cfg.novosDia || 10) + " por dia, nos Ajustes)." : "Amanhã há mais.") : "Depois de cada conversa, os erros e as palavras novas do relatório aparecem aqui. Também podes acrescentar palavras à mão.") + '</p></div></div>';
   } else {
     const c = revAtual, erro = c.tipo === "erro";
     // Erro: a frente é o que querias dizer, em português; a frase errada só aparece no verso.
@@ -1142,7 +1177,7 @@ function renderSobre(){
 function renderAjustes(){
   renderSobre();
   el("cfgNivel").value = S.cfg.nivel; el("cfgExplic").value = S.cfg.explic; el("cfgObjetivo").value = S.cfg.objetivo || "";
-  el("cfgMeta").value = S.cfg.meta; el("cfgVoz").value = S.cfg.voz;
+  el("cfgMeta").value = S.cfg.meta; el("cfgVoz").value = S.cfg.voz; el("cfgNovos").value = S.cfg.novosDia || 10;
   el("cfgRepo").value = cfg.repo || DEFAULT_REPO;
   el("ghEstado").innerHTML = online()
     ? "Os dados ficam no repositório privado <code>" + esc(cfg.repo) + "</code>. Cada conversa e cada revisão é um commit."
@@ -1171,7 +1206,7 @@ function renderAll(){
 document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => mostrar(b.dataset.v));
 window.addEventListener("hashchange", () => { const v = location.hash.slice(1); if (v !== vista) mostrar(v); });
 
-el("btnHojeFalar").onclick = () => { const t = temaDoDia(); modo = t.m; temaId = t.id; mostrar("falar"); };
+el("btnHojeFalar").onclick = () => { const t = temaDoDia(); modo = t.modo; temaId = t.tema.id; mostrar("falar"); };
 el("btnHojeRever").onclick = () => mostrar("rever");
 el("btnSubir").onclick = () => { const i = NIVEIS.indexOf(S.cfg.nivel); registar([["cfg", {c: {nivel: NIVEIS[i + 1]}}]], "Subir de nível"); toast("Nível " + NIVEIS[i + 1] + ". Boa!"); };
 el("btnNaoSubir").onclick = () => registar([["naoSubir", {dia: hoje()}]], "Manter nível");
@@ -1245,7 +1280,8 @@ el("todos").addEventListener("toggle", renderListaCartoes);
 
 el("cfgGuardar").onclick = () => {
   const meta = Math.max(10, Math.min(1000, parseInt(el("cfgMeta").value, 10) || 90));
-  registar([["cfg", {c: {nivel: el("cfgNivel").value, explic: el("cfgExplic").value, objetivo: norm(el("cfgObjetivo").value), meta, voz: el("cfgVoz").value}}]], "Ajustes");
+  const novosDia = Math.max(1, Math.min(50, parseInt(el("cfgNovos").value, 10) || 10));
+  registar([["cfg", {c: {nivel: el("cfgNivel").value, explic: el("cfgExplic").value, objetivo: norm(el("cfgObjetivo").value), meta, voz: el("cfgVoz").value, novosDia}}]], "Ajustes");
   toast("Ajustes guardados.");
 };
 el("cfgLigar").onclick = async () => {
