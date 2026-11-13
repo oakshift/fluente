@@ -1,0 +1,1217 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fluente</title>
+<meta name="description" content="Treino de conversação em inglês com o Claude, com revisões e progresso guardados num repositório privado do GitHub.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#F3F5F4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101719" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fluente">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<!-- Só o GitHub (dados) pode ser contactado. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src https://api.github.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<style>
+  html { -webkit-text-size-adjust: 100%; }
+  body, h1, h2, h3, p, ol, ul { margin: 0; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  /* Layout: uma coluna estreita de cartões, barra de separadores fixa em baixo, ao alcance do polegar. */
+  :root {
+    --ground: #F3F5F4;
+    --surface: #FFFFFF;
+    --sunk: #E7ECEA;
+    --edge: #D3DBD8;
+    --ink: #14211F;
+    --soft: #4A5A57;
+    --faint: #66746F;
+    --teal: #0F5C66;
+    --teal-soft: #DDEDEE;
+    --mustard: #8A5A00;
+    --mustard-soft: #F5EBD3;
+    --red: #A2342B;
+    --red-soft: #F7E1DE;
+    --green: #2F6B33;
+    --green-soft: #E0EEDF;
+    --on-accent: #FFFFFF;
+    --radius: 14px;
+    --font-display: ui-serif, "Iowan Old Style", Georgia, serif;
+    --font-ui: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, sans-serif;
+    --font-data: ui-monospace, "SF Mono", Menlo, "Roboto Mono", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #101719; --surface: #172124; --sunk: #131C1E; --edge: #283639;
+      --ink: #E4EBE9; --soft: #A6B4B1; --faint: #8C9A97;
+      --teal: #5FB8C2; --teal-soft: #17302F; --mustard: #E0AE52; --mustard-soft: #2E2614;
+      --red: #EE8A80; --red-soft: #3A1E1B; --green: #8CC98F; --green-soft: #1B2D1C; --on-accent: #0B1213;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #101719; --surface: #172124; --sunk: #131C1E; --edge: #283639;
+    --ink: #E4EBE9; --soft: #A6B4B1; --faint: #8C9A97;
+    --teal: #5FB8C2; --teal-soft: #17302F; --mustard: #E0AE52; --mustard-soft: #2E2614;
+    --red: #EE8A80; --red-soft: #3A1E1B; --green: #8CC98F; --green-soft: #1B2D1C; --on-accent: #0B1213;
+  }
+
+  body {
+    background: var(--ground); color: var(--ink);
+    font: 16px/1.45 var(--font-ui);
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+  main { max-width: 640px; margin: 0 auto; display: grid; gap: 14px; }
+  header.top { max-width: 640px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 14px 10px; }
+  .brand { font: 600 1.45rem/1 var(--font-display); letter-spacing: -0.01em; }
+  .brand span { color: var(--teal); }
+  #status { font-size: .78rem; color: var(--faint); text-align: right; }
+  #status.ok { color: var(--green); }
+  #status.bad { color: var(--mustard); }
+
+  section.view { display: grid; gap: 14px; }
+  .card { background: var(--surface); border: 1px solid var(--edge); border-radius: var(--radius); padding: 16px; display: grid; gap: 10px; min-width: 0; }
+  .card.flat { background: transparent; border-style: dashed; }
+  h2 { font: 600 1.25rem/1.2 var(--font-display); text-wrap: balance; }
+  h3 { font-size: 1rem; font-weight: 650; }
+  .eyebrow { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); font-weight: 600; }
+  .small { font-size: .875rem; }
+  .muted { color: var(--soft); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .spread { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .num { font-variant-numeric: tabular-nums; }
+  a { color: var(--teal); }
+  code { font-family: var(--font-data); font-size: .85em; background: var(--sunk); padding: 1px 5px; border-radius: 5px; }
+
+  .btn { appearance: none; border: 1px solid var(--edge); background: var(--surface); border-radius: 999px; padding: 10px 16px; font-weight: 600; cursor: pointer; min-height: 44px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; color: var(--ink); }
+  .btn.primary { background: var(--teal); border-color: var(--teal); color: var(--on-accent); }
+  .btn.ghost { background: transparent; }
+  .btn.wide { width: 100%; }
+  .btn.sm { min-height: 34px; padding: 6px 12px; font-size: .875rem; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn:focus-visible, .chip:focus-visible, nav button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { appearance: none; border: 1px solid var(--edge); background: var(--surface); border-radius: 999px; padding: 8px 13px; cursor: pointer; font-size: .9rem; min-height: 38px; }
+  .chip[aria-pressed="true"] { background: var(--teal-soft); border-color: var(--teal); color: var(--ink); font-weight: 600; }
+
+  label.fl { display: grid; gap: 4px; font-size: .875rem; color: var(--soft); }
+  input[type=text], input[type=password], input[type=number], select, textarea {
+    width: 100%; box-sizing: border-box; border: 1px solid var(--edge); background: var(--surface); border-radius: 10px; padding: 10px 12px; color: var(--ink); min-height: 44px;
+  }
+  textarea { min-height: 120px; resize: vertical; font-size: .9rem; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stat { background: var(--sunk); border-radius: 10px; padding: 10px; display: grid; gap: 2px; }
+  .stat b { font: 600 1.5rem/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
+  .stat span { font-size: .75rem; color: var(--soft); }
+
+  .bar { height: 8px; background: var(--sunk); border-radius: 99px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--teal); border-radius: 99px; }
+
+  .pill { display: inline-block; font-size: .72rem; font-weight: 650; padding: 2px 8px; border-radius: 99px; background: var(--sunk); color: var(--soft); letter-spacing: .02em; }
+  .pill.teal { background: var(--teal-soft); color: var(--teal); }
+  .pill.mustard { background: var(--mustard-soft); color: var(--mustard); }
+  .pill.red { background: var(--red-soft); color: var(--red); }
+  .pill.green { background: var(--green-soft); color: var(--green); }
+
+  .steps { display: grid; gap: 14px; counter-reset: passo; }
+  .step { display: grid; grid-template-columns: 30px 1fr; gap: 10px; }
+  .step::before { counter-increment: passo; content: counter(passo); width: 28px; height: 28px; border-radius: 50%; background: var(--teal-soft); color: var(--teal); font-weight: 700; display: grid; place-items: center; font-size: .9rem; }
+  .step > div { display: grid; gap: 8px; min-width: 0; }
+
+  .en { font-family: var(--font-display); font-size: 1.05rem; }
+  .fix { display: grid; gap: 2px; padding: 10px 12px; background: var(--sunk); border-radius: 10px; }
+  .fix s { color: var(--red); text-decoration-thickness: 1px; }
+  .fix .ok { color: var(--green); font-weight: 600; }
+
+  /* Cartão de revisão */
+  .flash { min-height: 190px; display: grid; place-items: center; text-align: center; gap: 10px; padding: 22px 16px; }
+  .flash .front { font: 600 1.5rem/1.25 var(--font-display); text-wrap: balance; }
+  .flash .back { display: grid; gap: 6px; }
+  .grades { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .grades .btn { border-radius: 10px; padding: 8px 4px; flex-direction: column; gap: 0; font-size: .85rem; }
+  .grades .btn small { font-weight: 400; color: var(--faint); font-size: .72rem; }
+
+  .speak { appearance: none; border: 1px solid var(--edge); background: var(--surface); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: inline-grid; place-items: center; flex: none; color: var(--teal); }
+  .speak svg { width: 18px; height: 18px; }
+
+  ul.list { list-style: none; padding: 0; display: grid; gap: 8px; }
+  ul.list li { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; padding: 10px 12px; background: var(--sunk); border-radius: 10px; min-width: 0; }
+  ul.list li > div { min-width: 0; display: grid; gap: 2px; }
+  details > summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 32px; }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::after { content: "+"; color: var(--faint); font-weight: 400; font-size: 1.2rem; }
+  details[open] > summary::after { content: "–"; }
+  details > .inner { display: grid; gap: 10px; padding-top: 10px; }
+  pre.prompt { white-space: pre-wrap; word-break: break-word; font: .8rem/1.45 var(--font-data); background: var(--sunk); padding: 12px; border-radius: 10px; margin: 0; max-height: 300px; overflow: auto; }
+
+  svg.chart { width: 100%; height: auto; display: block; }
+  svg.chart text { fill: var(--faint); font: 11px var(--font-ui); }
+
+  nav.tabs {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    background: var(--surface); border-top: 1px solid var(--edge);
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);
+  }
+  nav.tabs button { appearance: none; border: 0; background: transparent; padding: 8px 2px 9px; display: grid; justify-items: center; gap: 2px; font-size: .72rem; color: var(--faint); cursor: pointer; position: relative; }
+  nav.tabs button svg { width: 22px; height: 22px; }
+  nav.tabs button[aria-current="page"] { color: var(--teal); font-weight: 650; }
+  nav.tabs .badge { position: absolute; top: 4px; left: calc(50% + 6px); background: var(--mustard); color: var(--on-accent); font-size: .65rem; font-weight: 700; border-radius: 99px; padding: 0 5px; min-width: 16px; line-height: 16px; }
+
+  #toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(86px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--ground); padding: 10px 16px; border-radius: 12px; z-index: 30; max-width: calc(100% - 40px); font-size: .9rem; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+  #fatal { background: var(--red-soft); color: var(--red); padding: 12px; border-radius: 10px; margin: 10px auto; max-width: 640px; }
+  @media (prefers-reduced-motion: no-preference) { .flash { transition: background .2s; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">Flu<span>ente</span></div>
+  <div id="status">Só neste telemóvel</div>
+</header>
+
+<main>
+  <!-- ============ HOJE ============ -->
+  <section class="view" id="v-hoje">
+    <div class="card">
+      <div class="spread"><span class="eyebrow" id="hojeData">Hoje</span><span class="pill teal" id="hojeNivel">B1</span></div>
+      <div class="stats">
+        <div class="stat"><b id="stSeq">0</b><span>dias seguidos</span></div>
+        <div class="stat"><b id="stMin">0</b><span>min a falar esta semana</span></div>
+        <div class="stat"><b id="stRev">0</b><span>revisões para hoje</span></div>
+      </div>
+      <div style="display:grid;gap:4px">
+        <div class="spread small"><span class="muted">Meta da semana</span><span class="num" id="metaTxt">0 / 90 min</span></div>
+        <div class="bar"><i id="metaBar" style="width:0%"></i></div>
+      </div>
+    </div>
+
+    <div class="card" id="cardSubir" hidden>
+      <h3>O Claude acha que já estás acima do teu nível</h3>
+      <p class="small muted" id="subirTxt"></p>
+      <div class="row"><button class="btn primary sm" type="button" id="btnSubir">Subir de nível</button><button class="btn ghost sm" type="button" id="btnNaoSubir">Ainda não</button></div>
+    </div>
+
+    <div class="card">
+      <span class="eyebrow">Conversa de hoje</span>
+      <h2 id="hojeTema">—</h2>
+      <p class="small muted" id="hojeTemaDesc"></p>
+      <button class="btn primary wide" type="button" id="btnHojeFalar">Preparar a conversa</button>
+    </div>
+
+    <div class="card" id="cardRevHoje">
+      <div class="spread"><h3>Revisão</h3><span class="small muted num" id="revHojeTxt"></span></div>
+      <p class="small muted">Os erros das conversas e as palavras novas voltam em intervalos cada vez maiores, até ficarem.</p>
+      <button class="btn wide" type="button" id="btnHojeRever">Rever agora</button>
+    </div>
+
+    <div class="card">
+      <div class="spread"><span class="eyebrow">Frase do dia</span><span class="small muted" id="fraseCat"></span></div>
+      <div class="row" style="flex-wrap:nowrap;align-items:flex-start">
+        <div style="display:grid;gap:2px;min-width:0;flex:1">
+          <p class="en" lang="en" id="fraseEn"></p>
+          <p class="small muted" id="frasePt"></p>
+        </div>
+        <button class="speak" type="button" id="fraseOuvir" aria-label="Ouvir a frase"></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FALAR ============ -->
+  <section class="view" id="v-falar" hidden>
+    <div class="card">
+      <h2>Preparar a conversa</h2>
+      <div class="steps">
+        <div class="step"><div>
+          <h3>Escolhe o tipo de conversa</h3>
+          <div class="chips" id="modos"></div>
+          <p class="small muted" id="modoDesc"></p>
+        </div></div>
+        <div class="step" id="passoTema"><div>
+          <h3>Escolhe o tema</h3>
+          <select id="tema" aria-label="Tema"></select>
+          <input type="text" id="temaLivre" placeholder="Ou escreve o teu tema, em português ou inglês" hidden>
+          <p class="small muted" id="temaDesc"></p>
+        </div></div>
+        <div class="step"><div>
+          <h3>Copia e abre o Claude</h3>
+          <p class="small muted">Cola a mensagem numa conversa nova, envia, e toca no botão de voz (o das ondas sonoras) para começar a falar.</p>
+          <a class="btn primary wide" id="btnAbrir" href="https://claude.ai/new" target="_blank" rel="noopener">Copiar e abrir o Claude</a>
+          <button class="btn wide" type="button" id="btnCopiar">Só copiar a mensagem</button>
+          <details><summary class="small">Ver a mensagem</summary><div class="inner"><pre class="prompt" id="promptTxt" lang="en"></pre></div></details>
+        </div></div>
+        <div class="step"><div>
+          <h3>No fim, traz o relatório</h3>
+          <p class="small muted">Diz <b lang="en">“end session”</b>. O Claude passa para texto e escreve o relatório. Copia a resposta toda e cola aqui.</p>
+          <textarea id="relatorio" placeholder="Cola aqui a resposta do Claude…" lang="en"></textarea>
+          <label class="fl">Minutos a falar<input type="number" id="relMin" min="1" max="240" inputmode="numeric"></label>
+          <button class="btn primary wide" type="button" id="btnLerRel">Ler o relatório</button>
+          <div id="relPreview" hidden></div>
+          <details><summary class="small">Sem relatório? Registar só os minutos</summary><div class="inner">
+            <button class="btn wide" type="button" id="btnSoMin">Registar a conversa sem relatório</button>
+          </div></details>
+        </div></div>
+      </div>
+    </div>
+    <div class="card flat">
+      <h3>Para tirar mais da conversa</h3>
+      <ul class="small muted" style="padding-left:18px;display:grid;gap:4px">
+        <li>Fala mais do que o Claude. Se ele falar muito, diz <i lang="en">“shorter answers, please”</i>.</li>
+        <li>Não sabes uma palavra? Diz-a em português: ele dá-te a inglesa e pede-te para repetir a frase.</li>
+        <li>Pede <i lang="en">“slower, please”</i> ou <i lang="en">“can you say that again?”</i>. Faz parte do treino.</li>
+        <li>Dez minutos todos os dias valem mais do que uma hora ao domingo.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ REVER ============ -->
+  <section class="view" id="v-rever" hidden>
+    <div class="card" id="revBox">
+      <div class="spread"><h2>Revisão</h2><span class="small muted num" id="revConta"></span></div>
+      <div id="revArea"></div>
+    </div>
+    <div class="card">
+      <details id="addCard"><summary>Acrescentar uma palavra ou expressão</summary><div class="inner">
+        <label class="fl">Em inglês<input type="text" id="nEn" lang="en" placeholder="to look forward to"></label>
+        <label class="fl">Em português<input type="text" id="nPt" placeholder="estar ansioso por (coisa boa)"></label>
+        <label class="fl">Exemplo (opcional)<input type="text" id="nEx" lang="en" placeholder="I'm looking forward to the weekend."></label>
+        <button class="btn primary" type="button" id="btnAddCard">Acrescentar</button>
+      </div></details>
+    </div>
+    <div class="card">
+      <details id="todos"><summary>Todos os cartões <span class="small muted num" id="todosN"></span></summary><div class="inner">
+        <input type="text" id="procura" placeholder="Procurar…" aria-label="Procurar cartões">
+        <ul class="list" id="listaCartoes"></ul>
+      </div></details>
+    </div>
+  </section>
+
+  <!-- ============ PROGRESSO ============ -->
+  <section class="view" id="v-prog" hidden>
+    <div class="card">
+      <h2>Progresso</h2>
+      <div class="stats">
+        <div class="stat"><b id="pConv">0</b><span>conversas</span></div>
+        <div class="stat"><b id="pHoras">0</b><span>horas a falar</span></div>
+        <div class="stat"><b id="pSabe">0</b><span>cartões aprendidos</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Minutos a falar por semana</h3>
+      <div id="grafSemanas"></div>
+    </div>
+    <div class="card">
+      <h3>Nível estimado pelo Claude</h3>
+      <div id="grafNivel"></div>
+    </div>
+    <div class="card">
+      <h3>O que mais te escapa</h3>
+      <p class="small muted">Os cartões de erro que mais vezes falhaste na revisão. A próxima “Revisão de erros” trabalha estes.</p>
+      <ul class="list" id="listaDificeis"></ul>
+    </div>
+    <div class="card">
+      <h3>Conversas</h3>
+      <div id="listaSessoes" style="display:grid;gap:8px"></div>
+    </div>
+  </section>
+
+  <!-- ============ GUIA ============ -->
+  <section class="view" id="v-guia" hidden>
+    <div class="card">
+      <h2>Kit de conversa</h2>
+      <p class="small muted">Frases para ganhar tempo, pedir ajuda e manter a conversa a andar. Toca no altifalante para ouvir.</p>
+      <div id="kit" style="display:grid;gap:8px"></div>
+    </div>
+    <div class="card">
+      <details><summary>Falsos amigos</summary><div class="inner">
+        <p class="small muted">Palavras parecidas com o português que querem dizer outra coisa.</p>
+        <ul class="list" id="falsos"></ul>
+      </div></details>
+    </div>
+    <div class="card">
+      <details><summary>Pronúncia para quem fala português</summary><div class="inner" id="pronuncia"></div></details>
+    </div>
+    <div class="card">
+      <details><summary>Como usar o modo de voz do Claude</summary><div class="inner small">
+        <ol style="padding-left:18px;display:grid;gap:6px">
+          <li>Na Fluente, escolhe o tipo de conversa e toca em <b>Copiar e abrir o Claude</b>.</li>
+          <li>Na app do Claude, numa conversa nova, cola a mensagem e envia. O Claude responde com a primeira pergunta.</li>
+          <li>Toca no botão de voz (ao lado do campo de texto). A partir daqui é só falar. Podes interromper o Claude a meio.</li>
+          <li>Quando quiseres acabar, diz <i lang="en">“end session”</i> e sai do modo de voz. O relatório aparece por escrito.</li>
+          <li>Copia a resposta (mantém o dedo em cima dela → Copiar) e cola-a no passo 4 da Fluente.</li>
+        </ol>
+        <p class="muted">Nas definições da app do Claude podes escolher a voz. As vozes britânicas e americanas servem as duas: o importante é ouvires muito.</p>
+      </div></details>
+    </div>
+    <div class="card">
+      <h2>Ajustes</h2>
+      <label class="fl">O meu nível
+        <select id="cfgNivel">
+          <option value="A2">A2 — básico: frases simples do dia a dia</option>
+          <option value="B1">B1 — intermédio: aguento uma conversa com esforço</option>
+          <option value="B2">B2 — intermédio alto: falo com à-vontade, com erros</option>
+          <option value="C1">C1 — avançado: quero soar natural</option>
+        </select>
+      </label>
+      <p class="small muted">Não sabes? Faz uma conversa do tipo <b>Teste de nível</b>.</p>
+      <label class="fl">Explicações das correções
+        <select id="cfgExplic"><option value="pt">Em português</option><option value="en">Em inglês simples</option></select>
+      </label>
+      <label class="fl">Para que precisas do inglês? (o Claude puxa por aí)
+        <input type="text" id="cfgObjetivo" placeholder="Ex.: reuniões de trabalho, viajar, ajudar os filhos">
+      </label>
+      <label class="fl">Meta de minutos a falar por semana<input type="number" id="cfgMeta" min="10" max="1000" step="10" inputmode="numeric"></label>
+      <label class="fl">Sotaque da voz das revisões
+        <select id="cfgVoz"><option value="en-GB">Britânico</option><option value="en-US">Americano</option></select>
+      </label>
+      <button class="btn primary" type="button" id="cfgGuardar">Guardar ajustes</button>
+    </div>
+    <div class="card">
+      <h2>GitHub</h2>
+      <p class="small" id="ghEstado"></p>
+      <details><summary class="small">Como ligar ao GitHub</summary><div class="inner small">
+        <p>Se já tens um token para outra app (Caderno, Horta, Cozinha, Descomplica), podes acrescentar-lhe este repositório em vez de criar outro:</p>
+        <ol style="padding-left:18px;display:grid;gap:4px">
+          <li>Abre <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener">github.com/settings/personal-access-tokens</a>.</li>
+          <li>Abre o token que já usas e carrega em <em>Edit</em>. Em <em>Repository access</em>, acrescenta <code>fluente-dados</code> e guarda. Depois toca em <b>Usar o token de outra app</b>.</li>
+          <li>Ou cria um novo: <em>Generate new token</em>, <em>Only select repositories</em> → <code>fluente-dados</code>, e em <em>Repository permissions → Contents</em> escolhe <em>Read and write</em>. Cola-o abaixo.</li>
+        </ol>
+      </div></details>
+      <label class="fl">Repositório<input type="text" id="cfgRepo" placeholder="oakshift/fluente-dados"></label>
+      <label class="fl">Token do GitHub<input type="password" id="cfgToken" placeholder="github_pat_…" autocomplete="off"></label>
+      <p class="small muted">O token fica guardado só neste telemóvel.</p>
+      <div class="row">
+        <button class="btn primary" type="button" id="cfgLigar">Ligar</button>
+        <button class="btn" type="button" id="cfgProcurar">Usar o token de outra app</button>
+        <button class="btn ghost" type="button" id="cfgDesligar">Apagar o token</button>
+      </div>
+      <p class="small muted" id="procuraRel"></p>
+    </div>
+  </section>
+</main>
+
+<nav class="tabs" aria-label="Secções">
+  <button type="button" data-v="hoje"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Hoje</button>
+  <button type="button" data-v="falar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M9 10.5v3M12 9v6M15 10.5v3"/></svg>Falar</button>
+  <button type="button" data-v="rever"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="14" height="14" rx="2"/><path d="M7 3h12a2 2 0 0 1 2 2v12"/></svg>Rever<span class="badge" id="badgeRev" hidden>0</span></button>
+  <button type="button" data-v="prog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Progresso</button>
+  <button type="button" data-v="guia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h7"/></svg>Guia</button>
+</nav>
+
+<div id="toast" hidden></div>
+
+<script>
+"use strict";
+window.addEventListener("error", ev => {
+  if (document.getElementById("fatal") || !document.body) return;
+  const d = document.createElement("div");
+  d.id = "fatal";
+  d.textContent = "A app encontrou um erro e pode não ter carregado tudo: " + (ev.message || "erro desconhecido") + " — mostra esta mensagem ao Claude.";
+  document.body.insertBefore(d, document.body.firstChild);
+});
+
+const DEFAULT_REPO = "oakshift/fluente-dados";
+const FILE = "dados.json";
+const NIVEIS = ["A2", "B1", "B2", "C1", "C2"];
+
+/* ================= Conteúdo ================= */
+
+const MODOS = [
+  {id: "livre", t: "Conversa livre", d: "Uma conversa descontraída sobre um tema do dia a dia."},
+  {id: "situacao", t: "Situação real", d: "Role-play: o Claude faz de empregado, médico, rececionista… e tu resolves a situação."},
+  {id: "debate", t: "Dar opinião", d: "O Claude lança uma afirmação polémica e obriga-te a justificar o que pensas."},
+  {id: "historia", t: "Contar uma história", d: "Contas algo que te aconteceu. Treina os tempos do passado."},
+  {id: "revisao", t: "Revisão de erros", d: "O Claude cria situações que te obrigam a usar o que mais erras."},
+  {id: "nivel", t: "Teste de nível", d: "Dez minutos a subir a dificuldade. No fim, o Claude estima o teu nível (A2 a C1)."}
+];
+
+const TEMAS = [
+  // conversa livre
+  {id: "fds", m: "livre", t: "O teu fim de semana", en: "my last weekend and my plans for the next one", n: "A2"},
+  {id: "trabalho", m: "livre", t: "O teu trabalho", en: "my job: what I do, what I like and dislike about it", n: "A2"},
+  {id: "comida", m: "livre", t: "Comida e cozinha", en: "food, cooking and Portuguese dishes I would recommend", n: "A2"},
+  {id: "cidade", m: "livre", t: "A tua cidade", en: "the town where I live and what a visitor should see there", n: "A2"},
+  {id: "familia", m: "livre", t: "Família e amigos", en: "my family and friends and what we like doing together", n: "A2"},
+  {id: "rotina", m: "livre", t: "Um dia normal", en: "my daily routine, from waking up to going to bed", n: "A2"},
+  {id: "hobbies", m: "livre", t: "Passatempos", en: "my hobbies and how I got into them", n: "A2"},
+  {id: "series", m: "livre", t: "Filmes e séries", en: "films and series I have watched recently", n: "B1"},
+  {id: "musica", m: "livre", t: "Música", en: "the music I listen to and concerts I have been to", n: "B1"},
+  {id: "viagens", m: "livre", t: "Viagens", en: "places I have travelled to and places I would love to visit", n: "B1"},
+  {id: "tecnologia", m: "livre", t: "Tecnologia no dia a dia", en: "how technology and my phone fit into my daily life", n: "B1"},
+  {id: "saude", m: "livre", t: "Saúde e exercício", en: "staying healthy: sleep, exercise and food", n: "B1"},
+  {id: "noticias", m: "livre", t: "Notícias da semana", en: "something I read or heard in the news this week (ask me what it was)", n: "B2"},
+  {id: "futuro", m: "livre", t: "Daqui a dez anos", en: "where I see myself in ten years and what I hope will change", n: "B2"},
+  // situações
+  {id: "restaurante", m: "situacao", t: "Num restaurante", en: "You are a waiter in a London restaurant. I am a customer with a food allergy who wants a table for two and a recommendation.", n: "A2"},
+  {id: "hotel", m: "situacao", t: "Problema no hotel", en: "You are a hotel receptionist. I have just checked in and my room is noisy and the air conditioning doesn't work.", n: "A2"},
+  {id: "direcoes", m: "situacao", t: "Pedir direções", en: "You are a local in Dublin. I am lost and need to get to the train station before my train leaves.", n: "A2"},
+  {id: "loja", m: "situacao", t: "Devolver uma compra", en: "You are a shop assistant. I want to return a jacket I bought last week without the receipt.", n: "A2"},
+  {id: "medico", m: "situacao", t: "No médico", en: "You are a GP. I have had a bad cough and a fever for four days and need to explain my symptoms.", n: "B1"},
+  {id: "aeroporto", m: "situacao", t: "Voo cancelado", en: "You are an airline agent at the airport. My flight was cancelled and I need to get home tonight.", n: "B1"},
+  {id: "telefone", m: "situacao", t: "Marcar por telefone", en: "You answer the phone at a dentist's office. I want to book an appointment and my schedule is complicated.", n: "B1"},
+  {id: "vizinho", m: "situacao", t: "Conhecer um vizinho", en: "You are my new neighbour. We meet in the lift for the first time and make small talk.", n: "B1"},
+  {id: "carro", m: "situacao", t: "Alugar um carro", en: "You work at a car rental desk. I want a car for a week and have questions about insurance and fuel.", n: "B1"},
+  {id: "senhorio", m: "situacao", t: "Queixar-se ao senhorio", en: "You are my landlord. There is damp in the bedroom and I want it fixed this month.", n: "B2"},
+  {id: "conferencia", m: "situacao", t: "Networking numa conferência", en: "You are someone I meet during a coffee break at a professional conference. We make small talk and exchange contacts.", n: "B2"},
+  {id: "entrevista", m: "situacao", t: "Entrevista de emprego", en: "You are interviewing me for a job related to my real profession. Ask typical interview questions, including 'tell me about yourself' and a difficult one.", n: "B2"},
+  {id: "reuniao", m: "situacao", t: "Reunião de trabalho", en: "You are a colleague in an online meeting. I need to give a short update on a project that is behind schedule and suggest a solution.", n: "B2"},
+  {id: "negociar", m: "situacao", t: "Negociar um preço", en: "You are selling a second-hand car. I want to buy it but I think the price is too high.", n: "B2"},
+  // opinião
+  {id: "remoto", m: "debate", t: "Teletrabalho", en: "Working from home is better than working in an office.", n: "B1"},
+  {id: "redes", m: "debate", t: "Redes sociais e crianças", en: "Children under 15 should not be allowed on social media.", n: "B1"},
+  {id: "turismo", m: "debate", t: "Turismo em Lisboa e no Porto", en: "Tourism is doing more harm than good to Lisbon and Porto.", n: "B1"},
+  {id: "semana4", m: "debate", t: "Semana de quatro dias", en: "Every company should move to a four-day working week.", n: "B2"},
+  {id: "ia", m: "debate", t: "Inteligência artificial no trabalho", en: "Artificial intelligence will create more jobs than it destroys.", n: "B2"},
+  {id: "carros", m: "debate", t: "Carros no centro das cidades", en: "Cars should be banned from city centres.", n: "B2"},
+  {id: "tpc", m: "debate", t: "Trabalhos de casa", en: "Primary school children should not get homework.", n: "B1"},
+  // histórias
+  {id: "melhorViagem", m: "historia", t: "A melhor viagem", en: "the best trip I have ever taken", n: "A2"},
+  {id: "infancia", m: "historia", t: "Uma memória de infância", en: "a memory from my childhood", n: "A2"},
+  {id: "vergonha", m: "historia", t: "Um momento embaraçoso", en: "an embarrassing moment I can laugh about now", n: "B1"},
+  {id: "decisao", m: "historia", t: "Uma decisão difícil", en: "a difficult decision I had to make and how it turned out", n: "B1"},
+  {id: "pessoa", m: "historia", t: "Alguém que te marcou", en: "a person who had a big influence on my life", n: "B1"},
+  {id: "correuMal", m: "historia", t: "Quando tudo correu mal", en: "a day when everything went wrong", n: "B2"}
+];
+
+const KIT = [
+  {c: "Ganhar tempo", f: [
+    ["Let me think for a second…", "Deixa-me pensar um segundo…"],
+    ["That's a good question.", "Boa pergunta. (dá-te tempo)"],
+    ["How can I put this?", "Como é que hei de dizer isto?"],
+    ["Well, it depends.", "Bem, depende."]]},
+  {c: "Quando não percebes", f: [
+    ["Sorry, could you say that again?", "Desculpa, podes repetir?"],
+    ["Could you speak a bit more slowly?", "Podes falar mais devagar?"],
+    ["What do you mean by…?", "O que queres dizer com…?"],
+    ["I'm not sure I follow.", "Não sei se estou a perceber."]]},
+  {c: "Quando te falta a palavra", f: [
+    ["What's the word for…?", "Como se diz…?"],
+    ["It's a kind of…", "É uma espécie de…"],
+    ["It's the thing you use to…", "É aquela coisa que se usa para…"],
+    ["I don't know how to say it in English, but…", "Não sei dizer em inglês, mas…"]]},
+  {c: "Dar opinião", f: [
+    ["As far as I'm concerned, …", "No que me diz respeito, …"],
+    ["I see your point, but…", "Percebo o teu ponto, mas…"],
+    ["I couldn't agree more.", "Concordo totalmente."],
+    ["I'm not so sure about that.", "Não tenho tanta certeza."]]},
+  {c: "Ligar ideias", f: [
+    ["On the other hand, …", "Por outro lado, …"],
+    ["What I mean is…", "O que quero dizer é…"],
+    ["Anyway, …", "Seja como for, … (volta ao assunto)"],
+    ["By the way, …", "A propósito, …"]]},
+  {c: "Conversa de circunstância", f: [
+    ["How's it going?", "Como vai isso?"],
+    ["Have you been busy lately?", "Tens andado ocupado?"],
+    ["It was nice talking to you.", "Gostei de falar contigo."],
+    ["Let's keep in touch.", "Vamos manter o contacto."]]}
+];
+
+const FALSOS = [
+  ["actually", "na verdade", "atualmente = currently, nowadays"],
+  ["pretend", "fingir", "pretender = intend, mean to"],
+  ["assist", "ajudar", "assistir (a um jogo) = watch, attend"],
+  ["eventually", "acabar por, por fim", "eventualmente = possibly"],
+  ["sensible", "sensato", "sensível = sensitive"],
+  ["push", "empurrar", "puxar = pull"],
+  ["library", "biblioteca", "livraria = bookshop"],
+  ["parents", "pais", "parentes = relatives"],
+  ["exquisite", "requintado", "esquisito = weird, picky"],
+  ["constipated", "com prisão de ventre", "constipado = have a cold"],
+  ["preservative", "conservante", "preservativo = condom"],
+  ["realise", "aperceber-se", "realizar = carry out, achieve"],
+  ["attend", "frequentar, estar presente", "atender = answer (the phone), serve"],
+  ["lecture", "palestra, aula", "leitura = reading"],
+  ["college", "ensino superior", "colégio = (private) school"],
+  ["fabric", "tecido", "fábrica = factory"],
+  ["costume", "fato, disfarce", "costume = habit, custom"],
+  ["discussion", "conversa, debate", "discussão (zanga) = argument"]
+];
+
+const PRONUNCIA = [
+  {t: "th: think, this", d: "Ponta da língua entre os dentes. Não é /f/ nem /d/: “I think” e não “I fink”.", ex: "I think this thing is three months old."},
+  {t: "-ed no passado", d: "Só soa “id” depois de t ou d (wanted, needed). Nos outros casos é só /t/ ou /d/: worked = “workt”, played = “playd”.", ex: "I worked, played and waited all day."},
+  {t: "Vogais curtas e longas", d: "ship / sheep, full / fool, live / leave. A curta é rápida e relaxada; a longa estica.", ex: "Did you live here or leave here?"},
+  {t: "h aspirado", d: "O h de house, happy, hotel sopra-se. Sem ele, “heart” e “art” soam iguais.", ex: "Harry's happy at home."},
+  {t: "Não acrescentes “i” no fim", d: "Quem fala português tende a dizer “cluby”, “Facebooky”. Corta o som no fim da consoante.", ex: "The club and the pub are closed."},
+  {t: "s antes de consoante", d: "Não começar com “e”: é “school”, não “eschool”; “Spain”, não “Espain”.", ex: "Students study Spanish in school."},
+  {t: "Acento na sílaba certa", d: "PHOtograph, phoTOgraphy, photoGRAPHic. Errar o acento atrapalha mais do que errar um som.", ex: "A photographer takes photographs."}
+];
+
+const ERROS_PT = "false friends (actually, pretend, assist, eventually, sensible), \"I have 30 years\" instead of \"I am 30\", dropped subjects (\"Is raining\"), \"people is\", in/on/at, present perfect vs past simple, missing third-person -s, make vs do, \"explain me\", \"since 3 years\", adjective order, and pronunciation of th, -ed endings, initial h and short vs long vowels";
+
+/* ================= Utilidades ================= */
+const el = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const pad = n => String(n).padStart(2, "0");
+const iso = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+const hoje = () => iso(new Date());
+const deDia = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const somaDias = (s, n) => { const d = deDia(s); d.setDate(d.getDate() + n); return iso(d); };
+const segunda = s => { const d = deDia(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return iso(d); };
+const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+const DIAS = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+const curto = s => { const d = deDia(s); return d.getDate() + " " + MESES[d.getMonth()]; };
+const hashId = s => { let h = 5381; for (const ch of s) h = ((h << 5) + h + ch.charCodeAt(0)) | 0; return "c" + (h >>> 0).toString(36); };
+const norm = s => String(s || "").trim().replace(/\s+/g, " ");
+
+function toast(msg){ const t = el("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 3200); }
+
+const ls = {
+  get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  del(k){ try { localStorage.removeItem(k); } catch (e) {} }
+};
+
+/* ================= Dados ================= */
+function vazio(){
+  return {versao: 1, inicio: hoje(), cfg: {nivel: "B1", explic: "pt", objetivo: "", meta: 90, voz: "en-GB"},
+          sessoes: [], cartoes: {}, ativ: {}, naoSubir: ""};
+}
+function completo(d){
+  const v = vazio();
+  d = d && typeof d === "object" ? d : {};
+  d.cfg = Object.assign(v.cfg, d.cfg || {});
+  for (const k of ["sessoes"]) if (!Array.isArray(d[k])) d[k] = [];
+  for (const k of ["cartoes", "ativ"]) if (!d[k] || typeof d[k] !== "object") d[k] = {};
+  if (!d.inicio) d.inicio = v.inicio;
+  if (d.naoSubir === undefined) d.naoSubir = "";
+  d.versao = 1;
+  return d;
+}
+
+let cfg = ls.get("fluente-cfg") || {repo: DEFAULT_REPO, token: ""};
+let S = completo(ls.get("fluente-cache") || vazio());
+let fila = ls.get("fluente-fila") || [];
+const online = () => !!(cfg.token && cfg.repo);
+
+/* Cada operação fixa valores (nenhuma alterna): aplicar duas vezes dá o mesmo. É o que
+   deixa guardá-las sem rede e reaplicá-las depois sobre a cópia mais recente. */
+const OPS = {
+  sessao(d, {s}){
+    d.sessoes = d.sessoes.filter(x => x.id !== s.id);
+    d.sessoes.push(s);
+    d.sessoes.sort((a, b) => a.d < b.d ? -1 : a.d > b.d ? 1 : 0);
+    d.ativ[s.d] = true;
+  },
+  apagarSessao(d, {id}){ d.sessoes = d.sessoes.filter(x => x.id !== id); },
+  cartao(d, {c}){ if (!d.cartoes[c.id]) d.cartoes[c.id] = c; },
+  rever(d, {id, dia, estado}){ if (d.cartoes[id]) { Object.assign(d.cartoes[id], estado); d.ativ[dia] = true; } },
+  apagarCartao(d, {id}){ delete d.cartoes[id]; },
+  cfg(d, {c}){ Object.assign(d.cfg, c); },
+  naoSubir(d, {dia}){ d.naoSubir = dia; }
+};
+
+/* ================= GitHub ================= */
+const b64enc = str => { const b = new TextEncoder().encode(str); let bin = ""; for (let i = 0; i < b.length; i += 0x8000) bin += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(bin); };
+const b64dec = b64 => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\s/g, "")), c => c.charCodeAt(0)));
+
+class GhError extends Error { constructor(status, msg){ super(msg); this.status = status; } }
+async function gh(method, body, c){
+  c = c || cfg;
+  const r = await fetch("https://api.github.com/repos/" + c.repo + "/contents/" + FILE, {
+    method, cache: "no-store",
+    headers: Object.assign({"Authorization": "Bearer " + c.token, "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"},
+                           body ? {"Content-Type": "application/json"} : {}),
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!r.ok) throw new GhError(r.status, (await r.json().catch(() => ({}))).message || r.statusText);
+  return r.json();
+}
+async function ghLoad(){
+  try { const j = await gh("GET"); return {data: completo(JSON.parse(b64dec(j.content))), sha: j.sha}; }
+  catch (e) { if (e.status === 404) return {data: vazio(), sha: null}; throw e; }
+}
+function ghMsg(e){
+  if (e && e.status === 401) return "O token do GitHub não é válido ou expirou.";
+  if (e && (e.status === 403 || e.status === 404)) return "O token não tem acesso a " + cfg.repo + ". Confirma o repositório e a permissão Contents: Read and write.";
+  return "Sem ligação ao GitHub. Fica guardado aqui e segue quando houver rede.";
+}
+function setStatus(txt, cls){ const s = el("status"); s.textContent = txt; s.className = cls || ""; }
+function statusFila(){
+  if (!online()) return setStatus("Só neste telemóvel", "bad");
+  if (fila.length) return setStatus("Por enviar: " + fila.length, "bad");
+  setStatus("Guardado no GitHub", "ok");
+}
+
+function registar(lista, msg){
+  // lista: [[op, args], …] — entram juntas, num só commit
+  for (const [op, args] of lista){
+    OPS[op](S, args);
+    fila.push({id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), op, args, msg});
+  }
+  ls.set("fluente-cache", S); ls.set("fluente-fila", fila);
+  renderAll();
+  agendar();
+}
+let tEnvio = null, enviando = false;
+function agendar(ms){ clearTimeout(tEnvio); tEnvio = setTimeout(enviar, ms === undefined ? 1500 : ms); }
+async function enviar(){
+  if (!online()) { statusFila(); return; }
+  if (enviando || !fila.length) { statusFila(); return; }
+  enviando = true; setStatus("A guardar…");
+  const lote = fila.slice();
+  try {
+    for (let tentativa = 0; tentativa < 2; tentativa++){
+      const {data, sha} = await ghLoad();
+      for (const o of lote) OPS[o.op](data, o.args);
+      const msgs = [...new Set(lote.map(o => o.msg))];
+      const msg = msgs.length === 1 ? msgs[0] : msgs[msgs.length - 1] + " (+" + (msgs.length - 1) + ")";
+      try {
+        await gh("PUT", Object.assign({message: msg || "Atualizar registo", content: b64enc(JSON.stringify(data, null, 1))}, sha ? {sha} : {}));
+        fila = fila.filter(o => !lote.includes(o));
+        S = data; for (const o of fila) OPS[o.op](S, o.args);
+        ls.set("fluente-cache", S); ls.set("fluente-fila", fila);
+        break;
+      } catch (e) { if (!(e.status === 409 || e.status === 422) || tentativa) throw e; }
+    }
+    enviando = false; renderAll(); statusFila();
+    if (fila.length) agendar(300);
+  } catch (e) {
+    enviando = false; console.error(e);
+    setStatus("Por enviar: " + fila.length, "bad");
+    if (e instanceof GhError && e.status < 500) toast(ghMsg(e));
+  }
+}
+async function carregar(){
+  if (!online()) { statusFila(); return; }
+  setStatus("A carregar…");
+  try {
+    const {data} = await ghLoad();
+    S = data; for (const o of fila) OPS[o.op](S, o.args);
+    ls.set("fluente-cache", S); renderAll();
+    if (fila.length) agendar(0); else statusFila();
+  } catch (e) { console.error(e); setStatus("Sem ligação — a mostrar a última cópia", "bad"); if (e instanceof GhError && e.status < 500) toast(ghMsg(e)); }
+}
+/* As outras apps em oakshift.github.io guardam o token em `<app>-cfg`. Se algum já tiver
+   acesso a fluente-dados, usa-se esse. */
+async function procurarToken(){
+  const relatorio = [];
+  if (online()) return {ok: true, relatorio};
+  const vistos = {};
+  let chaves = [];
+  try { chaves = Object.keys(localStorage); } catch (e) { return {ok: false, relatorio: ["Este browser não deixa ler o armazenamento."]}; }
+  for (const k of chaves){
+    if (!/-cfg$/.test(k) || k === "fluente-cfg") continue;
+    const c = ls.get(k), app = k.replace(/-cfg$/, "");
+    if (!c || !c.token) { relatorio.push(app + ": sem token guardado neste browser."); continue; }
+    if (vistos[c.token]) { relatorio.push(app + ": o mesmo token de " + vistos[c.token] + "."); continue; }
+    vistos[c.token] = app;
+    const tenta = {repo: cfg.repo || DEFAULT_REPO, token: c.token};
+    try { await gh("GET", null, tenta); }
+    catch (e) {
+      if (e.status === 404 && await repoVisivel(tenta)) { /* repositório sem dados.json: serve */ }
+      else {
+        relatorio.push(app + ": " + (e.status === 401 ? "o token expirou ou foi apagado." :
+          e.status === 404 || e.status === 403 ? "o token ainda não tem acesso a " + tenta.repo + "." :
+          "sem resposta do GitHub (" + (e.status || "rede") + ")."));
+        continue;
+      }
+    }
+    cfg = tenta; ls.set("fluente-cfg", cfg);
+    toast("Ligado ao GitHub com o token de " + app + ".");
+    return {ok: true, relatorio};
+  }
+  if (!relatorio.length) relatorio.push("Não há tokens de outras apps neste browser. Se as usas noutro browser, abre a Fluente nesse.");
+  return {ok: false, relatorio};
+}
+async function repoVisivel(c){
+  try { const r = await fetch("https://api.github.com/repos/" + c.repo, {headers: {"Authorization": "Bearer " + c.token}}); return r.ok; }
+  catch (e) { return false; }
+}
+
+/* ================= Voz (revisões) ================= */
+const ICON_SOM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+const temVoz = "speechSynthesis" in window;
+function falar(txt){
+  if (!temVoz) return toast("Este browser não tem voz inglesa.");
+  const u = new SpeechSynthesisUtterance(txt);
+  const lang = S.cfg.voz || "en-GB";
+  const vozes = speechSynthesis.getVoices();
+  u.voice = vozes.find(v => v.lang.replace("_", "-") === lang) || vozes.find(v => /^en/i.test(v.lang)) || null;
+  u.lang = lang; u.rate = 0.92;
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+if (temVoz) speechSynthesis.getVoices();
+
+/* ================= Repetição espaçada ================= */
+// Intervalos em dias. "Outra vez" volta ainda hoje; os outros alargam com a facilidade.
+function proximo(c, nota){
+  let {int = 0, ef = 2.5, reps = 0, lapsos = 0} = c;
+  if (nota === 0){ reps = 0; int = 0; ef = Math.max(1.3, ef - 0.2); lapsos++; }
+  else if (nota === 1){ int = Math.max(1, Math.round(int * 1.2)); ef = Math.max(1.3, ef - 0.15); reps++; }
+  else if (nota === 2){ int = reps === 0 ? 1 : reps === 1 ? 3 : Math.round(int * ef); reps++; }
+  else { int = reps === 0 ? 3 : Math.round(Math.max(int, 1) * ef * 1.3); ef += 0.15; reps++; }
+  int = Math.min(int, 365);
+  return {int, ef: Math.round(ef * 100) / 100, reps, lapsos, prox: somaDias(hoje(), int), ult: hoje()};
+}
+const devidos = () => Object.values(S.cartoes).filter(c => (c.prox || "") <= hoje())
+  // os que falhaste agora mesmo ("Outra vez") vão para o fim da fila
+  .sort((a, b) => ((a.ult === hoje()) - (b.ult === hoje())) || (a.prox || "").localeCompare(b.prox || "") || (a.criado || "").localeCompare(b.criado || ""));
+const aprendido = c => (c.int || 0) >= 21;
+
+function novoCartao(tipo, frente, verso, ex){
+  frente = norm(frente); verso = norm(verso);
+  if (!frente || !verso) return null;
+  const id = hashId(tipo + "|" + frente.toLowerCase());
+  return {id, tipo, frente, verso, ex: norm(ex), criado: hoje(), prox: hoje(), int: 0, ef: 2.5, reps: 0, lapsos: 0};
+}
+
+/* ================= Mensagem para o Claude ================= */
+let modo = "livre", temaId = "", inicioConversa = ls.get("fluente-inicio") || null;
+
+function temasDoModo(m){ return TEMAS.filter(t => t.m === m); }
+function temaAtual(){
+  if (temaId === "__livre") { const v = norm(el("temaLivre").value); return v ? {id: "livre-" + hashId(v), m: modo, t: v, en: v} : null; }
+  return TEMAS.find(t => t.id === temaId) || null;
+}
+
+function palavrasEmTreino(){
+  return Object.values(S.cartoes).filter(c => c.tipo === "palavra" && !aprendido(c))
+    .sort((a, b) => (a.prox || "").localeCompare(b.prox || "")).slice(0, 8).map(c => c.frente);
+}
+function errosRecentes(n){
+  return Object.values(S.cartoes).filter(c => c.tipo === "erro" && !aprendido(c))
+    .sort((a, b) => (b.lapsos || 0) - (a.lapsos || 0) || (b.criado || "").localeCompare(a.criado || "")).slice(0, n);
+}
+
+function construirPrompt(){
+  const c = S.cfg, t = temaAtual();
+  const explic = c.explic === "en" ? "in simple English" : "in European Portuguese (from Portugal, not Brazil)";
+  const L = [];
+  L.push("You are my English conversation coach. We are going to talk in voice mode, so:");
+  L.push("- Speak only English. Keep each of your turns short (one to three sentences) so that I talk more than you. End every turn with a question or a prompt for me.");
+  L.push("- No lists, headings, emojis or markdown while we talk.");
+  L.push("- My level is about " + c.nivel + " (CEFR). Use language just a little above my level. If I seem lost, rephrase more simply.");
+  if (c.objetivo) L.push("- I need English for: " + c.objetivo + ". Bring in vocabulary from that area when it fits.");
+  L.push("- I'm a native speaker of European Portuguese. Watch for the typical mistakes: " + ERROS_PT + ".");
+  L.push("- Corrections: don't stop me for every mistake. Recast my sentence correctly in your reply. About every five turns, or when a mistake gets in the way of meaning, say \"Quick fix:\" with at most two corrections, each explained in one short sentence " + explic + ", then carry on with the conversation.");
+  L.push("- If I say a word in Portuguese, tell me the English word and ask me to say the whole sentence again.");
+  L.push("");
+  L.push("Today's session: " + descricaoSessao(t));
+  const pal = palavrasEmTreino();
+  if (pal.length && modo !== "nivel") L.push("Words and expressions I'm learning. Create chances for me to use them naturally, without listing them: " + pal.join("; ") + ".");
+  const er = errosRecentes(modo === "revisao" ? 8 : 4);
+  if (er.length && modo !== "nivel") L.push("Mistakes I made recently. If I repeat one, point it out: " + er.map(x => "\"" + x.frente + "\" → \"" + x.verso + "\"").join("; ") + ".");
+  L.push("");
+  L.push("When I say \"end session\" (or \"terminar\"), stop the conversation and reply in writing with:");
+  L.push("1. Three short lines: what went well, what to improve, and the focus for next time.");
+  L.push("2. A JSON code block in exactly this format, with up to 8 mistakes I really made (my words, then the natural version) and up to 8 useful words or expressions from today that I didn't know or used wrongly:");
+  L.push('{"fluente":1,"tema":"' + (t ? t.t.replace(/"/g, "'") : "free talk") + '","nivel_estimado":"B1","pontos_fortes":"…","melhorar":"…","proximo_foco":"…","erros":[{"disse":"…","correto":"…","porque":"…"}],"palavras":[{"en":"…","pt":"…","exemplo":"…"}]}');
+  L.push("Write \"pontos_fortes\", \"melhorar\", \"proximo_foco\", \"porque\" and \"pt\" in European Portuguese. \"nivel_estimado\" is your honest CEFR estimate of my speaking today (A2, B1, B2, C1 or C2).");
+  L.push("");
+  L.push("Start now with your first question.");
+  return L.join("\n");
+}
+function descricaoSessao(t){
+  const tema = t ? t.en : "anything I find interesting (ask me)";
+  switch (modo){
+    case "livre": return "a relaxed conversation about " + tema + ". Be curious, ask follow-up questions and share a little about yourself too.";
+    case "situacao": return "a role-play. " + (t ? t.en : "Invent a realistic everyday situation for me.") + " Stay in character and make it a bit challenging, with one small unexpected problem. When the situation is resolved, step out of character, tell me two phrases a native speaker would have used, and offer to run it again.";
+    case "debate": return "a discussion. Start by saying this statement and asking what I think: \"" + (t ? t.en : "Choose a debatable statement about everyday life") + "\". Take the opposite side to mine, push back politely, and make me justify my opinion with reasons and examples. Encourage me to use linking words (however, on the other hand, that's why).";
+    case "historia": return "storytelling. Ask me to tell you about " + tema + ". Let me tell it, then ask follow-up questions that make me use different past tenses (past simple, past continuous, past perfect, used to).";
+    case "revisao": return "review of my recurring mistakes, listed below. For each one, create a short situation or question that makes me use the correct structure, two or three times, in different contexts. Don't tell me which mistake you're targeting until I get it right.";
+    case "nivel": return "a speaking level check of about ten minutes. Start with easy personal questions and gradually make them harder: describing, past experiences, future plans, hypotheticals (what would you do if…), and finally an abstract opinion. Don't correct me during the check. When I say \"end session\", explain your CEFR estimate in the three feedback lines.";
+  }
+  return "a conversation about " + tema + ".";
+}
+
+function temaDoDia(){
+  const n = S.cfg.nivel, idx = NIVEIS.indexOf(n);
+  const recentes = new Set(S.sessoes.slice(-12).map(s => s.temaId));
+  const ok = TEMAS.filter(t => NIVEIS.indexOf(t.n) <= idx && !recentes.has(t.id));
+  const pool = ok.length ? ok : TEMAS.filter(t => NIVEIS.indexOf(t.n) <= idx);
+  const dias = Math.round(deDia(hoje()) / 864e5);
+  return pool[dias % pool.length];
+}
+
+/* ================= Ler o relatório ================= */
+function lerRelatorio(txt){
+  const blocos = [...txt.matchAll(/```(?:json)?\s*([\s\S]*?)```/gi)].map(m => m[1]);
+  const candidatos = blocos.concat(txt.indexOf("{") >= 0 ? [txt.slice(txt.indexOf("{"), txt.lastIndexOf("}") + 1)] : []);
+  for (const c of candidatos){
+    for (const v of [c, c.replace(/[“”]/g, '"')]){
+      try {
+        const j = JSON.parse(v);
+        if (j && (j.erros || j.palavras || j.fluente)) return j;
+      } catch (e) {}
+    }
+  }
+  return null;
+}
+let relPendente = null;
+function previewRelatorio(j){
+  const erros = (Array.isArray(j.erros) ? j.erros : []).filter(e => e && e.disse && e.correto).slice(0, 12);
+  const pals = (Array.isArray(j.palavras) ? j.palavras : []).filter(p => p && p.en && p.pt).slice(0, 12);
+  const nivel = NIVEIS.includes(String(j.nivel_estimado || "").toUpperCase()) ? String(j.nivel_estimado).toUpperCase() : "";
+  relPendente = {j, erros, pals, nivel};
+  const p = el("relPreview");
+  p.innerHTML =
+    '<div class="card" style="background:var(--sunk);border:0;gap:8px">' +
+    '<div class="spread"><b>' + esc(j.tema || "Conversa") + '</b>' + (nivel ? '<span class="pill teal">' + nivel + '</span>' : "") + '</div>' +
+    (j.pontos_fortes ? '<p class="small"><b>Correu bem:</b> ' + esc(j.pontos_fortes) + '</p>' : "") +
+    (j.melhorar ? '<p class="small"><b>A melhorar:</b> ' + esc(j.melhorar) + '</p>' : "") +
+    (j.proximo_foco ? '<p class="small"><b>Próximo foco:</b> ' + esc(j.proximo_foco) + '</p>' : "") +
+    '<p class="small muted">Vão para a revisão ' + erros.length + ' erro' + (erros.length === 1 ? "" : "s") + ' e ' + pals.length + ' palavra' + (pals.length === 1 ? "" : "s") + '.</p>' +
+    '<button class="btn primary wide" type="button" id="btnGuardarRel">Guardar a conversa</button></div>';
+  p.hidden = false;
+  el("btnGuardarRel").onclick = guardarRelatorio;
+}
+function minutosConversa(){
+  const v = parseInt(el("relMin").value, 10);
+  if (v > 0) return Math.min(v, 240);
+  return 0;
+}
+function guardarSessao(extra){
+  const min = minutosConversa();
+  if (!min) { toast("Indica quantos minutos falaste."); el("relMin").focus(); return false; }
+  const t = temaAtual();
+  const s = Object.assign({id: Date.now().toString(36), d: hoje(), modo, temaId: t ? t.id : "", tema: t ? t.t : (MODOS.find(m => m.id === modo) || {}).t, min}, extra || {});
+  const ops = [["sessao", {s}]];
+  return {s, ops};
+}
+function guardarRelatorio(){
+  if (!relPendente) return;
+  const {j, erros, pals, nivel} = relPendente;
+  const r = guardarSessao({nivel, fortes: norm(j.pontos_fortes), melhorar: norm(j.melhorar), foco: norm(j.proximo_foco),
+    erros: erros.map(e => ({disse: norm(e.disse), correto: norm(e.correto), porque: norm(e.porque)})),
+    palavras: pals.map(p => ({en: norm(p.en), pt: norm(p.pt)}))});
+  if (!r) return;
+  for (const e of erros){ const c = novoCartao("erro", e.disse, e.correto, e.porque); if (c) r.ops.push(["cartao", {c}]); }
+  for (const p of pals){ const c = novoCartao("palavra", p.en, p.pt, p.exemplo); if (c) r.ops.push(["cartao", {c}]); }
+  registar(r.ops, "Conversa: " + r.s.tema);
+  limparConversa();
+  toast("Conversa guardada. Os erros e as palavras já estão na revisão.");
+  mostrar("hoje");
+}
+function limparConversa(){
+  relPendente = null; inicioConversa = null; ls.del("fluente-inicio");
+  el("relatorio").value = ""; el("relMin").value = ""; el("relPreview").hidden = true; el("relPreview").innerHTML = "";
+}
+
+/* ================= Render ================= */
+function sequencia(){
+  let n = 0, d = hoje();
+  if (!S.ativ[d]) d = somaDias(d, -1);
+  while (S.ativ[d]) { n++; d = somaDias(d, -1); }
+  return n;
+}
+function minutosSemana(seg){ const fim = somaDias(seg, 7); return S.sessoes.filter(s => s.d >= seg && s.d < fim).reduce((a, s) => a + (s.min || 0), 0); }
+
+function renderHoje(){
+  const d = deDia(hoje());
+  el("hojeData").textContent = DIAS[d.getDay()] + ", " + d.getDate() + " " + MESES[d.getMonth()];
+  el("hojeNivel").textContent = "Nível " + S.cfg.nivel;
+  el("stSeq").textContent = sequencia();
+  const m = minutosSemana(segunda(hoje()));
+  el("stMin").textContent = m;
+  const dev = devidos().length;
+  el("stRev").textContent = dev;
+  const meta = S.cfg.meta || 90;
+  el("metaTxt").textContent = m + " / " + meta + " min";
+  el("metaBar").style.width = Math.min(100, Math.round(m / meta * 100)) + "%";
+  const t = temaDoDia();
+  el("hojeTema").textContent = t.t;
+  el("hojeTemaDesc").textContent = (MODOS.find(x => x.id === t.m) || {}).t + " · nível " + t.n + " ou acima";
+  el("revHojeTxt").textContent = dev ? dev + " para hoje" : "Nada para hoje";
+  el("btnHojeRever").disabled = !dev;
+  el("btnHojeRever").textContent = dev ? "Rever agora" : "Tudo em dia";
+  // frase do dia
+  const todas = KIT.flatMap(k => k.f.map(f => ({c: k.c, en: f[0], pt: f[1]})));
+  const f = todas[Math.round(d / 864e5) % todas.length];
+  el("fraseEn").textContent = f.en; el("frasePt").textContent = f.pt; el("fraseCat").textContent = f.c;
+  el("fraseOuvir").onclick = () => falar(f.en);
+  // subir de nível: as três últimas estimativas acima do nível atual
+  const est = S.sessoes.filter(s => s.nivel).slice(-3);
+  const idx = NIVEIS.indexOf(S.cfg.nivel);
+  const acima = est.length === 3 && est.every(s => NIVEIS.indexOf(s.nivel) > idx) && S.naoSubir < somaDias(hoje(), -14);
+  el("cardSubir").hidden = !acima;
+  if (acima) el("subirTxt").textContent = "Nas últimas três conversas estimou " + est.map(s => s.nivel).join(", ") + ". Subir para " + NIVEIS[idx + 1] + " torna as conversas um pouco mais exigentes.";
+  const b = el("badgeRev"); b.hidden = !dev; b.textContent = dev > 99 ? "99+" : dev;
+}
+
+function renderFalar(){
+  el("modos").innerHTML = MODOS.map(m => '<button type="button" class="chip" data-m="' + m.id + '" aria-pressed="' + (m.id === modo) + '">' + esc(m.t) + '</button>').join("");
+  el("modoDesc").textContent = (MODOS.find(m => m.id === modo) || {}).d || "";
+  const semTema = modo === "revisao" || modo === "nivel";
+  el("passoTema").hidden = semTema;
+  if (!semTema){
+    const idx = NIVEIS.indexOf(S.cfg.nivel);
+    const lista = temasDoModo(modo);
+    if (!temaId || (temaId !== "__livre" && !lista.some(t => t.id === temaId))) {
+      const sug = lista.filter(t => NIVEIS.indexOf(t.n) <= idx);
+      temaId = (sug[Math.floor(Math.random() * sug.length)] || lista[0]).id;
+    }
+    el("tema").innerHTML = lista.map(t => '<option value="' + t.id + '"' + (t.id === temaId ? " selected" : "") + '>' + esc(t.t) + (NIVEIS.indexOf(t.n) > idx ? " (mais difícil)" : "") + '</option>').join("") +
+      '<option value="__livre"' + (temaId === "__livre" ? " selected" : "") + '>Outro tema…</option>';
+    el("temaLivre").hidden = temaId !== "__livre";
+    const t = temaAtual();
+    el("temaDesc").textContent = t && temaId !== "__livre" && modo === "situacao" ? t.en : "";
+  }
+  if (modo === "revisao" && !errosRecentes(1).length) el("modoDesc").textContent += " Ainda não tens erros guardados: faz primeiro uma conversa e guarda o relatório.";
+  atualizarPrompt();
+  if (inicioConversa && !el("relMin").value){
+    const m = Math.round((Date.now() - inicioConversa) / 60000);
+    if (m >= 1 && m <= 180) el("relMin").value = m;
+  }
+}
+function atualizarPrompt(){
+  const p = construirPrompt();
+  el("promptTxt").textContent = p;
+  let url = "https://claude.ai/new?q=" + encodeURIComponent(p);
+  if (url.length > 7000) url = "https://claude.ai/new";
+  el("btnAbrir").href = url;
+}
+
+let revFila = [], revAtual = null, revVirado = false, revFeitos = 0;
+function renderRever(){
+  const dev = devidos();
+  el("revConta").textContent = dev.length ? dev.length + " por rever" : "";
+  const area = el("revArea");
+  if (!revAtual || !S.cartoes[revAtual.id] || (S.cartoes[revAtual.id].prox || "") > hoje()) { revAtual = dev[0] || null; revVirado = false; }
+  if (!revAtual){
+    const total = Object.keys(S.cartoes).length;
+    area.innerHTML = '<div class="flash"><div class="back"><p class="front">' + (total ? "Tudo revisto por hoje" : "Ainda não há cartões") + '</p>' +
+      '<p class="small muted">' + (total ? (revFeitos ? revFeitos + " revistos nesta sessão. " : "") + "Amanhã há mais." : "Depois de cada conversa, os erros e as palavras novas do relatório aparecem aqui. Também podes acrescentar palavras à mão.") + '</p></div></div>';
+  } else {
+    const c = revAtual, erro = c.tipo === "erro";
+    const frente = erro
+      ? '<span class="pill red">Corrige</span><p class="front" lang="en">' + esc(c.frente) + '</p><p class="small muted">Diz em voz alta a versão certa e depois vira o cartão.</p>'
+      : '<span class="pill teal">Diz em inglês</span><p class="front">' + esc(c.verso) + '</p>';
+    const verso = erro
+      ? '<div class="fix"><span class="ok en" lang="en">' + esc(c.verso) + '</span>' + (c.ex ? '<span class="small muted">' + esc(c.ex) + '</span>' : "") + '</div>'
+      : '<div class="fix"><span class="ok en" lang="en">' + esc(c.frente) + '</span>' + (c.ex ? '<span class="small muted" lang="en">' + esc(c.ex) + '</span>' : "") + '</div>';
+    area.innerHTML = '<div class="flash"><div class="back">' + frente + '</div>' +
+      (revVirado ? '<div class="back" style="width:100%"><div class="row" style="flex-wrap:nowrap;justify-content:center">' + verso + '<button class="speak" type="button" id="revOuvir" aria-label="Ouvir">' + ICON_SOM + '</button></div></div>' : "") + '</div>' +
+      (revVirado
+        ? '<div class="grades">' + [["Outra vez", 0], ["Difícil", 1], ["Bem", 2], ["Fácil", 3]].map(([t, n]) => '<button class="btn" type="button" data-nota="' + n + '">' + t + '<small>' + rotuloInt(proximo(c, n).int) + '</small></button>').join("") + '</div>'
+        : '<button class="btn primary wide" type="button" id="revVirar">Mostrar a resposta</button>');
+    if (revVirado){
+      el("revOuvir").onclick = () => falar(erro ? c.verso : c.frente);
+      area.querySelectorAll("[data-nota]").forEach(b => b.onclick = () => {
+        const n = +b.dataset.nota;
+        registar([["rever", {id: c.id, dia: hoje(), estado: proximo(c, n)}]], "Revisão");
+        revFeitos++; revAtual = null; revVirado = false;
+        renderRever();
+      });
+    } else el("revVirar").onclick = () => { revVirado = true; renderRever(); };
+  }
+  renderListaCartoes();
+}
+const rotuloInt = n => n === 0 ? "hoje" : n === 1 ? "1 dia" : n < 30 ? n + " dias" : n < 365 ? Math.round(n / 30) + " meses" : "1 ano";
+
+function renderListaCartoes(){
+  const q = norm(el("procura").value).toLowerCase();
+  const todos = Object.values(S.cartoes).sort((a, b) => (b.criado || "").localeCompare(a.criado || ""));
+  el("todosN").textContent = "(" + todos.length + ")";
+  if (!el("todos").open) return;
+  const lista = todos.filter(c => !q || (c.frente + " " + c.verso).toLowerCase().includes(q)).slice(0, 200);
+  el("listaCartoes").innerHTML = lista.length ? lista.map(c =>
+    '<li><div><span class="en" lang="en">' + esc(c.tipo === "erro" ? c.verso : c.frente) + '</span>' +
+    '<span class="small muted">' + (c.tipo === "erro" ? "em vez de “" + esc(c.frente) + "”" : esc(c.verso)) + '</span>' +
+    '<span class="small muted">' + (c.tipo === "erro" ? '<span class="pill red">erro</span> ' : '<span class="pill teal">palavra</span> ') + (aprendido(c) ? '<span class="pill green">aprendido</span> ' : "") + 'próxima: ' + (c.prox <= hoje() ? "hoje" : curto(c.prox)) + '</span></div>' +
+    '<button class="btn ghost sm" type="button" data-apagar="' + c.id + '" aria-label="Apagar cartão">Apagar</button></li>').join("")
+    : '<li><span class="small muted">Nenhum cartão.</span></li>';
+  el("listaCartoes").querySelectorAll("[data-apagar]").forEach(b => b.onclick = () => {
+    if (b.dataset.confirma) { registar([["apagarCartao", {id: b.dataset.apagar}]], "Apagar cartão"); toast("Cartão apagado."); }
+    else { b.dataset.confirma = "1"; b.textContent = "Confirmar"; }
+  });
+}
+
+function renderProgresso(){
+  const tot = S.sessoes.reduce((a, s) => a + (s.min || 0), 0);
+  el("pConv").textContent = S.sessoes.length;
+  el("pHoras").textContent = (tot / 60).toFixed(tot < 600 ? 1 : 0).replace(".", ",");
+  el("pSabe").textContent = Object.values(S.cartoes).filter(aprendido).length;
+  // minutos por semana: últimas 10 semanas
+  const W = 320, H = 150, pl = 28, pb = 22, pt = 10;
+  const semanas = []; let s0 = segunda(hoje());
+  for (let i = 9; i >= 0; i--) semanas.push(somaDias(s0, -7 * i));
+  const vals = semanas.map(minutosSemana);
+  const meta = S.cfg.meta || 90;
+  const max = Math.max(meta, ...vals, 30);
+  const topo = Math.ceil(max / 30) * 30;
+  const y = v => pt + (H - pt - pb) * (1 - v / topo);
+  const bw = (W - pl) / semanas.length;
+  let g = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Minutos a falar por semana">';
+  for (const v of [0, topo / 2, topo]) g += '<line x1="' + pl + '" x2="' + W + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="var(--edge)" stroke-width="1"/><text x="' + (pl - 5) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + v + '</text>';
+  vals.forEach((v, i) => {
+    const x = pl + i * bw + bw * 0.18, w = bw * 0.64;
+    if (v) g += '<rect x="' + x + '" y="' + y(v) + '" width="' + w + '" height="' + (y(0) - y(v)) + '" rx="3" fill="' + (i === vals.length - 1 ? "var(--teal)" : "var(--teal-soft)") + '" stroke="var(--teal)" stroke-width="' + (i === vals.length - 1 ? 0 : 1) + '"/>';
+    if (i % 3 === 0 || i === vals.length - 1) g += '<text x="' + (x + w / 2) + '" y="' + (H - 6) + '" text-anchor="middle">' + (i === vals.length - 1 ? "esta" : curto(semanas[i])) + '</text>';
+  });
+  g += '<line x1="' + pl + '" x2="' + W + '" y1="' + y(meta) + '" y2="' + y(meta) + '" stroke="var(--mustard)" stroke-width="1.5" stroke-dasharray="4 3"/>';
+  g += '<text x="' + W + '" y="' + (y(meta) - 4) + '" text-anchor="end" style="fill:var(--mustard)">meta ' + meta + '</text></svg>';
+  el("grafSemanas").innerHTML = g;
+
+  // nível estimado
+  const niv = S.sessoes.filter(s => s.nivel).slice(-20);
+  if (niv.length < 2){
+    el("grafNivel").innerHTML = '<p class="small muted">' + (niv.length ? "Primeira estimativa: <b>" + niv[0].nivel + "</b> (" + curto(niv[0].d) + "). O gráfico aparece com duas ou mais." : "Aparece depois das primeiras conversas com relatório. Começa por um Teste de nível.") + '</p>';
+  } else {
+    const H2 = 130, pl2 = 30, pb2 = 20, pt2 = 10, lv = ["A2", "B1", "B2", "C1", "C2"];
+    const yy = n => pt2 + (H2 - pt2 - pb2) * (1 - lv.indexOf(n) / (lv.length - 1));
+    const xx = i => pl2 + 8 + (W - pl2 - 16) * (i / (niv.length - 1));
+    let h = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H2 + '" role="img" aria-label="Nível estimado ao longo do tempo">';
+    lv.forEach(n => h += '<line x1="' + pl2 + '" x2="' + W + '" y1="' + yy(n) + '" y2="' + yy(n) + '" stroke="var(--edge)"/><text x="' + (pl2 - 6) + '" y="' + (yy(n) + 4) + '" text-anchor="end">' + n + '</text>');
+    h += '<polyline fill="none" stroke="var(--teal)" stroke-width="2" points="' + niv.map((s, i) => xx(i) + "," + yy(s.nivel)).join(" ") + '"/>';
+    niv.forEach((s, i) => h += '<circle cx="' + xx(i) + '" cy="' + yy(s.nivel) + '" r="' + (i === niv.length - 1 ? 5 : 3) + '" fill="var(--teal)"/>');
+    h += '<text x="' + xx(0) + '" y="' + (H2 - 4) + '">' + curto(niv[0].d) + '</text><text x="' + xx(niv.length - 1) + '" y="' + (H2 - 4) + '" text-anchor="end">' + curto(niv[niv.length - 1].d) + '</text></svg>';
+    el("grafNivel").innerHTML = h;
+  }
+
+  const dif = Object.values(S.cartoes).filter(c => c.tipo === "erro" && (c.lapsos || 0) > 0).sort((a, b) => b.lapsos - a.lapsos).slice(0, 6);
+  el("listaDificeis").innerHTML = dif.length ? dif.map(c => '<li><div><span class="small"><s style="color:var(--red)">' + esc(c.frente) + '</s></span><span class="en ok" lang="en" style="color:var(--green)">' + esc(c.verso) + '</span></div><span class="pill mustard num">' + c.lapsos + '×</span></li>').join("")
+    : '<li><span class="small muted">Ainda nada: aparece quando falhares cartões de erro na revisão.</span></li>';
+
+  const ses = S.sessoes.slice().reverse().slice(0, 40);
+  el("listaSessoes").innerHTML = ses.length ? ses.map(s =>
+    '<details class="card" style="background:var(--sunk);border:0;padding:12px"><summary><span style="display:grid;gap:2px;min-width:0"><span>' + esc(s.tema || "Conversa") + '</span><span class="small muted">' + curto(s.d) + ' · ' + s.min + ' min' + (s.nivel ? ' · ' + s.nivel : "") + '</span></span></summary><div class="inner">' +
+    (s.fortes ? '<p class="small"><b>Correu bem:</b> ' + esc(s.fortes) + '</p>' : "") +
+    (s.melhorar ? '<p class="small"><b>A melhorar:</b> ' + esc(s.melhorar) + '</p>' : "") +
+    (s.foco ? '<p class="small"><b>Próximo foco:</b> ' + esc(s.foco) + '</p>' : "") +
+    ((s.erros || []).length ? (s.erros || []).map(e => '<div class="fix small"><s>' + esc(e.disse) + '</s><span class="ok" lang="en">' + esc(e.correto) + '</span>' + (e.porque ? '<span class="muted">' + esc(e.porque) + '</span>' : "") + '</div>').join("") : "") +
+    ((s.palavras || []).length ? '<p class="small"><b>Palavras:</b> ' + s.palavras.map(p => '<span lang="en">' + esc(p.en) + '</span> (' + esc(p.pt) + ')').join(", ") + '</p>' : "") +
+    '<button class="btn ghost sm" type="button" data-apsess="' + esc(s.id) + '">Apagar esta conversa</button></div></details>').join("")
+    : '<p class="small muted">Ainda não há conversas. A primeira está a um toque, no separador Falar.</p>';
+  el("listaSessoes").querySelectorAll("[data-apsess]").forEach(b => b.onclick = () => {
+    if (b.dataset.confirma) { registar([["apagarSessao", {id: b.dataset.apsess}]], "Apagar conversa"); toast("Conversa apagada. Os cartões ficam."); }
+    else { b.dataset.confirma = "1"; b.textContent = "Confirmar: apagar"; }
+  });
+}
+
+function renderGuia(){
+  el("kit").innerHTML = KIT.map(k => '<details><summary>' + esc(k.c) + '</summary><div class="inner"><ul class="list">' +
+    k.f.map((f, i) => '<li><div><span class="en" lang="en">' + esc(f[0]) + '</span><span class="small muted">' + esc(f[1]) + '</span></div><button class="speak" type="button" data-falar="' + esc(f[0]) + '" aria-label="Ouvir">' + ICON_SOM + '</button></li>').join("") +
+    '</ul></div></details>').join("");
+  el("falsos").innerHTML = FALSOS.map(f => '<li><div><span class="en" lang="en"><b>' + esc(f[0]) + '</b> = ' + esc(f[1]) + '</span><span class="small muted">' + esc(f[2]) + '</span></div><button class="speak" type="button" data-falar="' + esc(f[0]) + '" aria-label="Ouvir">' + ICON_SOM + '</button></li>').join("");
+  el("pronuncia").innerHTML = PRONUNCIA.map(p => '<div class="fix"><b>' + esc(p.t) + '</b><span class="small muted">' + esc(p.d) + '</span><div class="row" style="flex-wrap:nowrap;justify-content:space-between"><span class="en" lang="en">' + esc(p.ex) + '</span><button class="speak" type="button" data-falar="' + esc(p.ex) + '" aria-label="Ouvir">' + ICON_SOM + '</button></div></div>').join("");
+  document.querySelectorAll("#v-guia [data-falar]").forEach(b => b.onclick = () => falar(b.dataset.falar));
+  renderAjustes();
+}
+function renderAjustes(){
+  el("cfgNivel").value = S.cfg.nivel; el("cfgExplic").value = S.cfg.explic; el("cfgObjetivo").value = S.cfg.objetivo || "";
+  el("cfgMeta").value = S.cfg.meta; el("cfgVoz").value = S.cfg.voz;
+  el("cfgRepo").value = cfg.repo || DEFAULT_REPO;
+  el("ghEstado").innerHTML = online()
+    ? "Os dados ficam no repositório privado <code>" + esc(cfg.repo) + "</code>. Cada conversa e cada revisão é um commit."
+    : "Os dados estão <strong>só neste telemóvel</strong>. Liga ao GitHub para os guardar no repositório privado <code>fluente-dados</code>.";
+  el("cfgDesligar").hidden = !cfg.token;
+}
+
+let vista = "hoje";
+const VISTAS = {hoje: renderHoje, falar: renderFalar, rever: renderRever, prog: renderProgresso, guia: renderGuia};
+function mostrar(v){
+  if (!VISTAS[v]) v = "hoje";
+  vista = v;
+  for (const k of Object.keys(VISTAS)) el("v-" + k).hidden = k !== v;
+  document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-current", b.dataset.v === v ? "page" : "false"));
+  if (location.hash !== "#" + v) history.replaceState(null, "", "#" + v);
+  VISTAS[v]();
+  window.scrollTo(0, 0);
+}
+function renderAll(){
+  renderHoje();
+  if (vista !== "hoje" && vista !== "guia") VISTAS[vista]();
+  if (vista === "guia") renderAjustes();
+}
+
+/* ================= Eventos ================= */
+document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => mostrar(b.dataset.v));
+window.addEventListener("hashchange", () => { const v = location.hash.slice(1); if (v !== vista) mostrar(v); });
+
+el("btnHojeFalar").onclick = () => { const t = temaDoDia(); modo = t.m; temaId = t.id; mostrar("falar"); };
+el("btnHojeRever").onclick = () => mostrar("rever");
+el("btnSubir").onclick = () => { const i = NIVEIS.indexOf(S.cfg.nivel); registar([["cfg", {c: {nivel: NIVEIS[i + 1]}}]], "Subir de nível"); toast("Nível " + NIVEIS[i + 1] + ". Boa!"); };
+el("btnNaoSubir").onclick = () => registar([["naoSubir", {dia: hoje()}]], "Manter nível");
+
+el("modos").addEventListener("click", e => { const b = e.target.closest("[data-m]"); if (!b) return; modo = b.dataset.m; temaId = ""; renderFalar(); });
+el("tema").onchange = () => { temaId = el("tema").value; renderFalar(); if (temaId === "__livre") el("temaLivre").focus(); };
+el("temaLivre").oninput = atualizarPrompt;
+
+async function copiar(txt){
+  try { await navigator.clipboard.writeText(txt); return true; }
+  catch (e) {
+    const t = document.createElement("textarea"); t.value = txt; t.setAttribute("readonly", ""); t.style.position = "fixed"; t.style.opacity = "0";
+    document.body.appendChild(t); t.select(); let ok = false; try { ok = document.execCommand("copy"); } catch (e2) {} t.remove(); return ok;
+  }
+}
+function marcarInicio(){ inicioConversa = Date.now(); ls.set("fluente-inicio", inicioConversa); el("relMin").value = ""; }
+el("btnAbrir").addEventListener("click", ev => {
+  if (modo !== "revisao" && modo !== "nivel" && !temaAtual()) { ev.preventDefault(); toast("Escreve o tema primeiro."); return; }
+  copiar(construirPrompt()).then(ok => toast(ok ? "Mensagem copiada. Cola-a no Claude e envia." : "Não deu para copiar: abre “Ver a mensagem” e copia à mão."));
+  marcarInicio();
+});
+el("btnCopiar").onclick = async () => {
+  const ok = await copiar(construirPrompt());
+  toast(ok ? "Mensagem copiada." : "Não deu para copiar: abre “Ver a mensagem” e copia à mão.");
+  marcarInicio();
+};
+el("btnLerRel").onclick = () => {
+  const txt = el("relatorio").value;
+  if (!txt.trim()) return toast("Cola primeiro a resposta do Claude.");
+  const j = lerRelatorio(txt);
+  if (!j) { el("relPreview").hidden = false; el("relPreview").innerHTML = '<p class="small" style="color:var(--red)">Não encontrei o bloco de dados do relatório. Pede ao Claude: <i lang="en">“Please write the JSON report again, in a code block.”</i> e cola a resposta nova.</p>'; return; }
+  previewRelatorio(j);
+};
+el("btnSoMin").onclick = () => {
+  const r = guardarSessao({});
+  if (!r) return;
+  registar(r.ops, "Conversa: " + r.s.tema);
+  limparConversa(); toast("Conversa registada."); mostrar("hoje");
+};
+
+el("btnAddCard").onclick = () => {
+  const c = novoCartao("palavra", el("nEn").value, el("nPt").value, el("nEx").value);
+  if (!c) return toast("Preenche o inglês e o português.");
+  if (S.cartoes[c.id]) return toast("Esse cartão já existe.");
+  registar([["cartao", {c}]], "Novo cartão: " + c.frente);
+  el("nEn").value = el("nPt").value = el("nEx").value = "";
+  toast("Acrescentado. Aparece já na revisão de hoje.");
+};
+el("procura").oninput = renderListaCartoes;
+el("todos").addEventListener("toggle", renderListaCartoes);
+
+el("cfgGuardar").onclick = () => {
+  const meta = Math.max(10, Math.min(1000, parseInt(el("cfgMeta").value, 10) || 90));
+  registar([["cfg", {c: {nivel: el("cfgNivel").value, explic: el("cfgExplic").value, objetivo: norm(el("cfgObjetivo").value), meta, voz: el("cfgVoz").value}}]], "Ajustes");
+  toast("Ajustes guardados.");
+};
+el("cfgLigar").onclick = async () => {
+  const repo = el("cfgRepo").value.trim().replace(/^https:\/\/github\.com\//, "").replace(/\/$/, "") || DEFAULT_REPO;
+  const token = el("cfgToken").value.trim() || cfg.token;
+  if (!token) return toast("Cola o token do GitHub.");
+  cfg = {repo, token}; ls.set("fluente-cfg", cfg); el("cfgToken").value = "";
+  renderAjustes(); await carregar(); if (fila.length) agendar(0);
+};
+el("cfgProcurar").onclick = async () => {
+  const b = el("cfgProcurar"); b.disabled = true; b.textContent = "A procurar…";
+  const r = await procurarToken();
+  b.disabled = false; b.textContent = "Usar o token de outra app";
+  el("procuraRel").textContent = r.ok ? "" : r.relatorio.join(" ");
+  renderAjustes();
+  if (r.ok) { await carregar(); if (fila.length) agendar(0); }
+};
+el("cfgDesligar").onclick = () => { cfg = {repo: cfg.repo, token: ""}; ls.set("fluente-cfg", cfg); renderAjustes(); statusFila(); toast("Token apagado deste telemóvel."); };
+
+window.addEventListener("online", () => agendar(0));
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { if (fila.length) agendar(0); else if (online() && !enviando) carregar(); if (vista === "falar") renderFalar(); } });
+
+/* ================= Arranque ================= */
+el("fraseOuvir").innerHTML = ICON_SOM;
+mostrar(location.hash.slice(1) || "hoje");
+statusFila();
+(async () => {
+  if (!online()) await procurarToken();
+  await carregar();
+})();
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>

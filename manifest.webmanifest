@@ -1,0 +1,19 @@
+{
+  "name": "Fluente — inglês a falar",
+  "short_name": "Fluente",
+  "description": "Treino de conversação em inglês com o Claude.",
+  "lang": "pt-PT",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F3F5F4",
+  "theme_color": "#F3F5F4",
+  "shortcuts": [
+    {"name": "Preparar uma conversa", "short_name": "Falar", "url": "./#falar", "icons": [{"src": "icon.svg", "sizes": "any", "type": "image/svg+xml"}]},
+    {"name": "Revisão de hoje", "short_name": "Rever", "url": "./#rever", "icons": [{"src": "icon.svg", "sizes": "any", "type": "image/svg+xml"}]}
+  ],
+  "icons": [
+    {"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}
+  ]
+}
