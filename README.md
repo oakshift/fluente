@@ -9,7 +9,9 @@ Treino de conversação em inglês com o modo de voz da app do Claude, numa úni
   as palavras que estás a aprender e os erros que tens repetido. Copias, colas no Claude e falas.
   No fim dizes “end session”, o Claude escreve um relatório e colas-o de volta.
 - **Rever** — os erros e as palavras novas de cada relatório viram cartões de repetição espaçada.
-- **Progresso** — minutos a falar por semana, nível estimado pelo Claude, erros que mais te escapam
+- **Hoje** — a semana à vista (falar, ouvir, revisão), metas semanais de falar e de ouvir, as horas a caminho
+  do próximo nível (cerca de 200 por nível) e o registo da prática fora da app.
+- **Progresso** — minutos de inglês por semana, gravação mensal guardada para comparar, nível estimado pelo Claude, erros que mais te escapam
   e o histórico das conversas.
 - **Guia** — kit de frases para conversar, falsos amigos, pronúncia para quem fala português,
   treino de pronúncia com gravação (shadowing), lembrete diário no calendário, ajustes.

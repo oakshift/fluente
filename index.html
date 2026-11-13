@@ -167,6 +167,17 @@
   nav.tabs button[aria-current="page"] { color: var(--teal); font-weight: 650; }
   nav.tabs .badge { position: absolute; top: 4px; left: calc(50% + 6px); background: var(--mustard); color: var(--on-accent); font-size: .65rem; font-weight: 700; border-radius: 99px; padding: 0 5px; min-width: 16px; line-height: 16px; }
 
+  .semana { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .semana div { display: grid; justify-items: center; gap: 4px; padding: 6px 0; border-radius: 8px; font-size: .72rem; color: var(--faint); }
+  .semana div.hoje { background: var(--sunk); color: var(--ink); font-weight: 650; }
+  .semana .dots { display: flex; gap: 3px; min-height: 8px; }
+  .semana .dots i { width: 8px; height: 8px; border-radius: 50%; display: block; }
+  .d-falar { background: var(--teal); } .d-ouvir { background: var(--mustard); } .d-rever { background: var(--green); }
+  .legenda { display: flex; gap: 12px; flex-wrap: wrap; font-size: .75rem; color: var(--soft); }
+  .legenda span { display: inline-flex; align-items: center; gap: 5px; }
+  .legenda i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .bar.ouvir i { background: var(--mustard); }
+  .bar.grande { height: 12px; }
   #toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(86px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--ground); padding: 10px 16px; border-radius: 12px; z-index: 30; max-width: calc(100% - 40px); font-size: .9rem; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
   #fatal { background: var(--red-soft); color: var(--red); padding: 12px; border-radius: 10px; margin: 10px auto; max-width: 640px; }
   @media (prefers-reduced-motion: no-preference) { .flash { transition: background .2s; } }
@@ -186,12 +197,41 @@
       <div class="stats">
         <div class="stat"><b id="stSeq">0</b><span>dias seguidos</span></div>
         <div class="stat"><b id="stMin">0</b><span>min a falar esta semana</span></div>
-        <div class="stat"><b id="stRev">0</b><span>revisões para hoje</span></div>
+        <div class="stat"><b id="stOuvir">0</b><span>min a ouvir esta semana</span></div>
       </div>
       <div style="display:grid;gap:4px">
-        <div class="spread small"><span class="muted">Meta da semana</span><span class="num" id="metaTxt">0 / 90 min</span></div>
+        <div class="spread small"><span class="muted">Falar</span><span class="num" id="metaTxt">0 / 90 min</span></div>
         <div class="bar"><i id="metaBar" style="width:0%"></i></div>
       </div>
+      <div style="display:grid;gap:4px">
+        <div class="spread small"><span class="muted">Ouvir</span><span class="num" id="metaOuvirTxt">0 / 120 min</span></div>
+        <div class="bar ouvir"><i id="metaOuvirBar" style="width:0%"></i></div>
+      </div>
+      <div class="semana" id="semana" aria-label="Esta semana"></div>
+      <div class="legenda"><span><i class="d-falar"></i>falar</span><span><i class="d-ouvir"></i>ouvir</span><span><i class="d-rever"></i>revisão</span></div>
+      <p class="small" id="pessoaTxt"></p>
+      <details id="praticaBox"><summary>Registar outra prática</summary><div class="inner">
+        <div class="chips" id="praticaTipos"></div>
+        <label class="fl">Minutos<input type="number" id="praticaMin" min="1" max="600" inputmode="numeric" placeholder="30"></label>
+        <div class="chips" id="praticaRapidos"></div>
+        <label class="fl">O quê (opcional)<input type="text" id="praticaNota" placeholder="Ex.: 6 Minute English, episódio da série, conversa no Tandem"></label>
+        <button class="btn primary" type="button" id="btnPratica">Registar</button>
+      </div></details>
+    </div>
+
+    <div class="card">
+      <div class="spread"><span class="eyebrow">Horas de inglês</span><span class="small muted" id="caminhoDesde"></span></div>
+      <h2 id="caminhoTitulo">Rumo ao B2</h2>
+      <div class="bar grande"><i id="caminhoBar" style="width:0%"></i></div>
+      <div class="spread small"><span class="num" id="caminhoHoras">0 h de 200 h</span><span class="muted" id="caminhoRitmo"></span></div>
+      <p class="small muted">Em média, cada nível leva umas 200 horas de prática. Contam as conversas, os minutos a ouvir e a falar fora da app.</p>
+    </div>
+
+    <div class="card" id="cardGravacao" hidden>
+      <span class="eyebrow">Gravação do mês</span>
+      <h3>Ainda não te gravaste este mês</h3>
+      <p class="small muted">Dois minutos, sempre a mesma pergunta. Daqui a uns meses ouves a primeira e a última e notas a diferença.</p>
+      <button class="btn wide" type="button" id="btnIrGravar">Gravar agora</button>
     </div>
 
     <div class="card" id="cardSubir" hidden>
@@ -303,17 +343,34 @@
       <h2>Progresso</h2>
       <div class="stats">
         <div class="stat"><b id="pConv">0</b><span>conversas</span></div>
-        <div class="stat"><b id="pHoras">0</b><span>horas a falar</span></div>
+        <div class="stat"><b id="pHoras">0</b><span>horas de inglês</span></div>
         <div class="stat"><b id="pSabe">0</b><span>cartões aprendidos</span></div>
       </div>
     </div>
     <div class="card">
-      <h3>Minutos a falar por semana</h3>
+      <h3>Minutos de inglês por semana</h3>
+      <div class="legenda"><span><i class="d-falar"></i>falar</span><span><i class="d-ouvir"></i>ouvir</span></div>
       <div id="grafSemanas"></div>
     </div>
     <div class="card">
       <h3>Nível estimado pelo Claude</h3>
       <div id="grafNivel"></div>
+    </div>
+    <div class="card" id="gravSec">
+      <h3>Gravações mensais</h3>
+      <div class="fix"><span class="small muted">A pergunta de todos os meses</span><p class="en" lang="en" id="gravPergunta"></p></div>
+      <p class="small muted">Fala uns dois minutos, sem preparar. A gravação fica no teu repositório privado <code>fluente-dados</code>.</p>
+      <div class="row">
+        <button class="btn primary sm" type="button" id="gravGravar">Gravar</button>
+        <button class="btn sm" type="button" id="gravOuvir" hidden>Ouvir</button>
+        <button class="btn sm" type="button" id="gravGuardar" hidden>Guardar a gravação</button>
+      </div>
+      <p class="small muted" id="gravNota" hidden></p>
+      <ul class="list" id="gravLista"></ul>
+    </div>
+    <div class="card">
+      <h3>Outra prática</h3>
+      <ul class="list" id="listaPratica"></ul>
     </div>
     <div class="card">
       <h3>O que mais te escapa</h3>
@@ -410,6 +467,7 @@
         <input type="text" id="cfgObjetivo" placeholder="Ex.: reuniões de trabalho, viajar, ajudar os filhos">
       </label>
       <label class="fl">Meta de minutos a falar por semana<input type="number" id="cfgMeta" min="10" max="1000" step="10" inputmode="numeric"></label>
+      <label class="fl">Meta de minutos a ouvir por semana<input type="number" id="cfgMetaOuvir" min="10" max="2000" step="10" inputmode="numeric"></label>
       <label class="fl">Cartões novos por dia, no máximo<input type="number" id="cfgNovos" min="1" max="50" inputmode="numeric"></label>
       <label class="fl">Sotaque da voz das revisões
         <select id="cfgVoz"><option value="en-GB">Britânico</option><option value="en-US">Americano</option></select>
@@ -616,15 +674,15 @@ const ls = {
 
 /* ================= Dados ================= */
 function vazio(){
-  return {versao: 1, inicio: hoje(), cfg: {nivel: "B1", explic: "pt", objetivo: "", meta: 90, voz: "en-GB", novosDia: 10},
-          sessoes: [], cartoes: {}, ativ: {}, naoSubir: "", sobre: []};
+  return {versao: 1, inicio: hoje(), cfg: {nivel: "B1", explic: "pt", objetivo: "", meta: 90, metaOuvir: 120, voz: "en-GB", novosDia: 10},
+          sessoes: [], cartoes: {}, ativ: {}, naoSubir: "", sobre: [], pratica: [], gravacoes: [], rev: {}};
 }
 function completo(d){
   const v = vazio();
   d = d && typeof d === "object" ? d : {};
   d.cfg = Object.assign(v.cfg, d.cfg || {});
-  for (const k of ["sessoes", "sobre"]) if (!Array.isArray(d[k])) d[k] = [];
-  for (const k of ["cartoes", "ativ"]) if (!d[k] || typeof d[k] !== "object") d[k] = {};
+  for (const k of ["sessoes", "sobre", "pratica", "gravacoes"]) if (!Array.isArray(d[k])) d[k] = [];
+  for (const k of ["cartoes", "ativ", "rev"]) if (!d[k] || typeof d[k] !== "object") d[k] = {};
   if (!d.inicio) d.inicio = v.inicio;
   if (d.naoSubir === undefined) d.naoSubir = "";
   d.versao = 1;
@@ -647,7 +705,10 @@ const OPS = {
   },
   apagarSessao(d, {id}){ d.sessoes = d.sessoes.filter(x => x.id !== id); },
   cartao(d, {c}){ if (!d.cartoes[c.id]) d.cartoes[c.id] = c; },
-  rever(d, {id, dia, estado}){ if (d.cartoes[id]) { Object.assign(d.cartoes[id], estado); d.ativ[dia] = true; } },
+  rever(d, {id, dia, estado}){ if (d.cartoes[id]) { Object.assign(d.cartoes[id], estado); d.ativ[dia] = true; d.rev[dia] = true; } },
+  pratica(d, {p}){ d.pratica = d.pratica.filter(x => x.id !== p.id); d.pratica.push(p); d.pratica.sort((a, b) => a.d < b.d ? -1 : a.d > b.d ? 1 : 0); d.ativ[p.d] = true; },
+  apagarPratica(d, {id}){ d.pratica = d.pratica.filter(x => x.id !== id); },
+  gravacao(d, {g}){ d.gravacoes = d.gravacoes.filter(x => x.mes !== g.mes); d.gravacoes.push(g); d.gravacoes.sort((a, b) => a.mes < b.mes ? -1 : 1); },
   apagarCartao(d, {id}){ delete d.cartoes[id]; },
   cfg(d, {c}){ Object.assign(d.cfg, c); },
   naoSubir(d, {dia}){ d.naoSubir = dia; },
@@ -1000,20 +1061,65 @@ function sequencia(){
   while (S.ativ[d]) { n++; d = somaDias(d, -1); }
   return n;
 }
-function minutosSemana(seg){ const fim = somaDias(seg, 7); return S.sessoes.filter(s => s.d >= seg && s.d < fim).reduce((a, s) => a + (s.min || 0), 0); }
+const PRATICA = [
+  {id: "ouvir", t: "Ouvir", d: "podcast, série, vídeo"},
+  {id: "pessoa", t: "Falar com uma pessoa", d: "professor, Tandem, colegas"},
+  {id: "sozinho", t: "Falar sozinho", d: "descrever o que fazes"},
+  {id: "ler", t: "Ler ou escrever", d: "livro, artigo, diário"}
+];
+const FALAR = new Set(["pessoa", "sozinho"]);
+const entre = (x, ini, fim) => x.d >= ini && x.d < fim;
+function minutosFalar(ini, fim){ return S.sessoes.filter(s => entre(s, ini, fim)).reduce((a, s) => a + (s.min || 0), 0) + S.pratica.filter(p => FALAR.has(p.tipo) && entre(p, ini, fim)).reduce((a, p) => a + p.min, 0); }
+function minutosOuvir(ini, fim){ return S.pratica.filter(p => p.tipo === "ouvir" && entre(p, ini, fim)).reduce((a, p) => a + p.min, 0); }
+function minutosTotal(ini, fim){ return S.sessoes.filter(s => entre(s, ini, fim)).reduce((a, s) => a + (s.min || 0), 0) + S.pratica.filter(p => entre(p, ini, fim)).reduce((a, p) => a + p.min, 0); }
+const minutosSemana = seg => minutosFalar(seg, somaDias(seg, 7));
+const fmtHoras = m => { const h = m / 60; return (h < 10 ? h.toFixed(1) : Math.round(h).toString()).replace(".", ",").replace(/,0$/, ""); };
 
+function quandoChega(semanas){
+  if (semanas < 6) return "faltam umas " + Math.ceil(semanas) + " semanas";
+  const meses = Math.round(semanas / 4.35);
+  return meses <= 24 ? "faltam uns " + meses + " meses" : "faltam mais de 2 anos — aumenta os minutos a ouvir";
+}
 function renderHoje(){
   const d = deDia(hoje());
   el("hojeData").textContent = DIAS[d.getDay()] + ", " + d.getDate() + " " + MESES[d.getMonth()];
   el("hojeNivel").textContent = "Nível " + S.cfg.nivel;
   el("stSeq").textContent = sequencia();
-  const m = minutosSemana(segunda(hoje()));
-  el("stMin").textContent = m;
+  const seg = segunda(hoje()), fimSem = somaDias(seg, 7);
+  const m = minutosFalar(seg, fimSem), mo = minutosOuvir(seg, fimSem);
+  el("stMin").textContent = m; el("stOuvir").textContent = mo;
   const dev = devidos().length;
-  el("stRev").textContent = dev;
-  const meta = S.cfg.meta || 90;
+  const meta = S.cfg.meta || 90, metaO = S.cfg.metaOuvir || 120;
   el("metaTxt").textContent = m + " / " + meta + " min";
   el("metaBar").style.width = Math.min(100, Math.round(m / meta * 100)) + "%";
+  el("metaOuvirTxt").textContent = mo + " / " + metaO + " min";
+  el("metaOuvirBar").style.width = Math.min(100, Math.round(mo / metaO * 100)) + "%";
+  // a semana, de segunda a domingo
+  const curtos = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+  el("semana").innerHTML = curtos.map((nome, i) => {
+    const dia = somaDias(seg, i), fim = somaDias(dia, 1);
+    const f = minutosFalar(dia, fim) > 0, o = minutosOuvir(dia, fim) > 0, r = !!S.rev[dia];
+    return '<div class="' + (dia === hoje() ? "hoje" : "") + '" title="' + curto(dia) + '"><span>' + nome + '</span><span class="dots">' +
+      (f ? '<i class="d-falar"></i>' : "") + (o ? '<i class="d-ouvir"></i>' : "") + (r ? '<i class="d-rever"></i>' : "") + '</span></div>';
+  }).join("");
+  const pessoa = S.pratica.some(p => p.tipo === "pessoa" && entre(p, seg, fimSem));
+  el("pessoaTxt").innerHTML = pessoa ? '<span class="pill green">Feito</span> Conversa com uma pessoa esta semana.' : '<span class="pill mustard">Por fazer</span> Uma conversa com uma pessoa esta semana (professor, Tandem, colegas).';
+  // horas a caminho do próximo nível
+  const nIdx = NIVEIS.indexOf(S.cfg.nivel), alvo = NIVEIS[Math.min(nIdx + 1, NIVEIS.length - 1)];
+  const desde = S.cfg.nivelDesde || S.inicio;
+  const feitas = minutosTotal(desde, "9999");
+  el("caminhoTitulo").textContent = "Rumo ao " + alvo;
+  el("caminhoDesde").textContent = "desde " + curto(desde);
+  el("caminhoHoras").textContent = fmtHoras(feitas) + " h de 200 h";
+  el("caminhoBar").style.width = Math.min(100, feitas / 120) + "%";
+  const ritmo = minutosTotal(somaDias(hoje(), -27), "9999") / 4;   // minutos por semana, média de 4 semanas
+  const dias = Math.max(1, Math.round((deDia(hoje()) - deDia(S.inicio)) / 864e5) + 1);
+  const ritmoReal = dias < 28 ? minutosTotal(S.inicio, "9999") / dias * 7 : ritmo;
+  const falta = 12000 - feitas;
+  // a previsão só aparece com uma semana de histórico: com um dia só, engana
+  el("caminhoRitmo").textContent = falta <= 0 ? "Chegaste às 200 horas!" : dias < 7 ? "a previsão aparece ao fim de uma semana" : ritmoReal >= 10 ? "a este ritmo, " + quandoChega(falta / ritmoReal) : "";
+  // gravação do mês
+  el("cardGravacao").hidden = S.gravacoes.some(g => g.mes === hoje().slice(0, 7));
   const t = temaDoDia();
   el("hojeTema").textContent = t.tema.t;
   el("hojeTemaDesc").textContent = (MODOS.find(x => x.id === t.modo) || {}).t + (t.motivo ? " · para treinar o que o Claude te pediu: " + t.motivo : "");
@@ -1138,30 +1244,43 @@ function renderListaCartoes(){
 }
 
 function renderProgresso(){
-  const tot = S.sessoes.reduce((a, s) => a + (s.min || 0), 0);
   el("pConv").textContent = S.sessoes.length;
-  el("pHoras").textContent = (tot / 60).toFixed(tot < 600 ? 1 : 0).replace(".", ",");
+  el("pHoras").textContent = fmtHoras(minutosTotal("0000", "9999"));
   el("pSabe").textContent = Object.values(S.cartoes).filter(aprendido).length;
   // minutos por semana: últimas 10 semanas
   const W = 320, H = 150, pl = 28, pb = 22, pt = 10;
   const semanas = []; let s0 = segunda(hoje());
   for (let i = 9; i >= 0; i--) semanas.push(somaDias(s0, -7 * i));
-  const vals = semanas.map(minutosSemana);
+  const valsF = semanas.map(sg => minutosFalar(sg, somaDias(sg, 7)));
+  const valsO = semanas.map(sg => minutosOuvir(sg, somaDias(sg, 7)));
+  const vals = valsF.map((v, i) => v + valsO[i]);
   const meta = S.cfg.meta || 90;
   const max = Math.max(meta, ...vals, 30);
   const topo = Math.ceil(max / 30) * 30;
   const y = v => pt + (H - pt - pb) * (1 - v / topo);
   const bw = (W - pl) / semanas.length;
-  let g = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Minutos a falar por semana">';
+  let g = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Minutos de inglês por semana">';
   for (const v of [0, topo / 2, topo]) g += '<line x1="' + pl + '" x2="' + W + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="var(--edge)" stroke-width="1"/><text x="' + (pl - 5) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + v + '</text>';
   vals.forEach((v, i) => {
     const x = pl + i * bw + bw * 0.18, w = bw * 0.64;
-    if (v) g += '<rect x="' + x + '" y="' + y(v) + '" width="' + w + '" height="' + (y(0) - y(v)) + '" rx="3" fill="' + (i === vals.length - 1 ? "var(--teal)" : "var(--teal-soft)") + '" stroke="var(--teal)" stroke-width="' + (i === vals.length - 1 ? 0 : 1) + '"/>';
+    const vf = valsF[i], vo = valsO[i];
+    if (vf) g += '<rect x="' + x + '" y="' + y(vf) + '" width="' + w + '" height="' + (y(0) - y(vf)) + '" fill="var(--teal)"/>';
+    if (vo) g += '<rect x="' + x + '" y="' + y(vf + vo) + '" width="' + w + '" height="' + (y(vf) - y(vf + vo)) + '" fill="var(--mustard)"/>';
     if (i % 3 === 0 || i === vals.length - 1) g += '<text x="' + (x + w / 2) + '" y="' + (H - 6) + '" text-anchor="middle">' + (i === vals.length - 1 ? "esta" : curto(semanas[i])) + '</text>';
   });
-  g += '<line x1="' + pl + '" x2="' + W + '" y1="' + y(meta) + '" y2="' + y(meta) + '" stroke="var(--mustard)" stroke-width="1.5" stroke-dasharray="4 3"/>';
-  g += '<text x="' + W + '" y="' + (y(meta) - 4) + '" text-anchor="end" style="fill:var(--mustard)">meta ' + meta + '</text></svg>';
+  g += '<line x1="' + pl + '" x2="' + W + '" y1="' + y(meta) + '" y2="' + y(meta) + '" stroke="var(--ink)" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="4 3"/>';
+  g += '<text x="' + W + '" y="' + (y(meta) - 4) + '" text-anchor="end" style="fill:var(--soft)">meta a falar ' + meta + '</text></svg>';
   el("grafSemanas").innerHTML = g;
+
+  renderGravacoes();
+  const prat = S.pratica.slice().reverse().slice(0, 30);
+  el("listaPratica").innerHTML = prat.length ? prat.map(p => '<li><div><span>' + esc((PRATICA.find(t => t.id === p.tipo) || {}).t || p.tipo) + ' · ' + p.min + ' min</span><span class="small muted">' + curto(p.d) + (p.nota ? " · " + esc(p.nota) : "") + '</span></div>' +
+    '<button class="btn ghost sm" type="button" data-appr="' + esc(p.id) + '">Apagar</button></li>').join("")
+    : '<li><span class="small muted">Regista no separador Hoje o que ouves e as conversas fora da app. Tudo conta para as 200 horas.</span></li>';
+  el("listaPratica").querySelectorAll("[data-appr]").forEach(b => b.onclick = () => {
+    if (b.dataset.confirma) registar([["apagarPratica", {id: b.dataset.appr}]], "Apagar prática");
+    else { b.dataset.confirma = "1"; b.textContent = "Confirmar"; }
+  });
 
   // nível estimado
   const niv = S.sessoes.filter(s => s.nivel).slice(-20);
@@ -1220,7 +1339,7 @@ function renderSobre(){
 function renderAjustes(){
   renderSobre();
   el("cfgNivel").value = S.cfg.nivel; el("cfgExplic").value = S.cfg.explic; el("cfgObjetivo").value = S.cfg.objetivo || "";
-  el("cfgMeta").value = S.cfg.meta; el("cfgVoz").value = S.cfg.voz; el("cfgNovos").value = S.cfg.novosDia || 10;
+  el("cfgMeta").value = S.cfg.meta; el("cfgVoz").value = S.cfg.voz; el("cfgNovos").value = S.cfg.novosDia || 10; el("cfgMetaOuvir").value = S.cfg.metaOuvir || 120;
   el("cfgRepo").value = cfg.repo || DEFAULT_REPO;
   el("ghEstado").innerHTML = online()
     ? "Os dados ficam no repositório privado <code>" + esc(cfg.repo) + "</code>. Cada conversa e cada revisão é um commit."
@@ -1255,7 +1374,7 @@ let mudarPara = "";
 el("btnSubir").onclick = () => {
   if (!mudarPara) return;
   const sobe = NIVEIS.indexOf(mudarPara) > NIVEIS.indexOf(S.cfg.nivel), n = mudarPara;
-  registar([["cfg", {c: {nivel: n}}], ["naoSubir", {dia: hoje()}]], sobe ? "Subir de nível" : "Descer de nível");
+  registar([["cfg", {c: {nivel: n, nivelDesde: hoje()}}], ["naoSubir", {dia: hoje()}]], sobe ? "Subir de nível" : "Descer de nível");
   toast("Nível " + n + (sobe ? ". Boa!" : "."));
 };
 el("btnNaoSubir").onclick = () => registar([["naoSubir", {dia: hoje()}]], "Manter nível");
@@ -1330,7 +1449,10 @@ el("todos").addEventListener("toggle", renderListaCartoes);
 el("cfgGuardar").onclick = () => {
   const meta = Math.max(10, Math.min(1000, parseInt(el("cfgMeta").value, 10) || 90));
   const novosDia = Math.max(1, Math.min(50, parseInt(el("cfgNovos").value, 10) || 10));
-  registar([["cfg", {c: {nivel: el("cfgNivel").value, explic: el("cfgExplic").value, objetivo: norm(el("cfgObjetivo").value), meta, voz: el("cfgVoz").value, novosDia}}]], "Ajustes");
+  const metaOuvir = Math.max(10, Math.min(2000, parseInt(el("cfgMetaOuvir").value, 10) || 120));
+  const c = {nivel: el("cfgNivel").value, explic: el("cfgExplic").value, objetivo: norm(el("cfgObjetivo").value), meta, metaOuvir, voz: el("cfgVoz").value, novosDia};
+  if (c.nivel !== S.cfg.nivel) c.nivelDesde = hoje();   // as 200 horas contam a partir de cada mudança de nível
+  registar([["cfg", {c}]], "Ajustes");
   toast("Ajustes guardados.");
 };
 el("cfgLigar").onclick = async () => {
@@ -1352,6 +1474,104 @@ el("cfgDesligar").onclick = () => { cfg = {repo: cfg.repo, token: ""}; ls.set("f
 
 window.addEventListener("online", () => agendar(0));
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { if (fila.length) agendar(0); else if (online() && !enviando) carregar(); if (vista === "falar") renderFalar(); } });
+
+/* ================= Outra prática ================= */
+let praticaTipo = "ouvir";
+function renderPraticaForm(){
+  el("praticaTipos").innerHTML = PRATICA.map(t => '<button type="button" class="chip" data-pt="' + t.id + '" aria-pressed="' + (t.id === praticaTipo) + '">' + esc(t.t) + '</button>').join("");
+  el("praticaRapidos").innerHTML = [15, 30, 45, 60].map(n => '<button type="button" class="chip" data-pm="' + n + '">' + n + ' min</button>').join("");
+  el("praticaNota").placeholder = "Ex.: " + (PRATICA.find(t => t.id === praticaTipo) || {}).d;
+}
+el("praticaTipos").addEventListener("click", e => { const b = e.target.closest("[data-pt]"); if (b) { praticaTipo = b.dataset.pt; renderPraticaForm(); } });
+el("praticaRapidos").addEventListener("click", e => { const b = e.target.closest("[data-pm]"); if (b) el("praticaMin").value = b.dataset.pm; });
+el("btnPratica").onclick = () => {
+  const min = Math.min(600, parseInt(el("praticaMin").value, 10) || 0);
+  if (min < 1) return toast("Indica os minutos.");
+  const p = {id: Date.now().toString(36), d: hoje(), tipo: praticaTipo, min, nota: norm(el("praticaNota").value)};
+  registar([["pratica", {p}]], (PRATICA.find(t => t.id === p.tipo) || {}).t + ": " + min + " min");
+  el("praticaMin").value = ""; el("praticaNota").value = ""; el("praticaBox").open = false;
+  toast("Registado: " + min + " min.");
+};
+renderPraticaForm();
+
+/* ================= Gravação mensal ================= */
+const PERGUNTA_MES = "Tell me about your life right now: your work, your family, what you do in your free time, and your plans for the next few months.";
+el("gravPergunta").textContent = PERGUNTA_MES;
+async function ghFicheiro(path, opts){
+  const r = await fetch("https://api.github.com/repos/" + cfg.repo + "/contents/" + path, Object.assign({cache: "no-store"}, opts || {},
+    {headers: Object.assign({"Authorization": "Bearer " + cfg.token, "X-GitHub-Api-Version": "2022-11-28"}, (opts || {}).headers || {})}));
+  if (!r.ok) throw new GhError(r.status, r.statusText);
+  return r;
+}
+const blobB64 = blob => new Promise((ok, falha) => { const f = new FileReader(); f.onload = () => ok(String(f.result).split(",")[1]); f.onerror = falha; f.readAsDataURL(blob); });
+let gravRec = null, gravBlob = null, gravUrl = "", gravSeg = 0, gravTimer = null, gravAudio = null;
+function gravNota(t){ el("gravNota").hidden = !t; el("gravNota").textContent = t || ""; }
+const mmss = n => Math.floor(n / 60) + ":" + pad(n % 60);
+el("gravGravar").onclick = async () => {
+  if (gravRec && gravRec.state === "recording") { gravRec.stop(); return; }
+  if (!navigator.mediaDevices || !window.MediaRecorder) return gravNota("Este browser não deixa gravar. Experimenta no Chrome.");
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({audio: true}); }
+  catch (e) { return gravNota("Sem acesso ao microfone. Autoriza-o nas definições do site no Chrome (cadeado → Permissões)."); }
+  const partes = [];
+  gravRec = new MediaRecorder(stream);
+  gravRec.ondataavailable = e => { if (e.data.size) partes.push(e.data); };
+  gravRec.onstop = () => {
+    clearInterval(gravTimer); stream.getTracks().forEach(t => t.stop());
+    gravBlob = new Blob(partes, {type: gravRec.mimeType || "audio/webm"});
+    if (gravUrl) URL.revokeObjectURL(gravUrl);
+    gravUrl = URL.createObjectURL(gravBlob);
+    el("gravGravar").textContent = "Gravar outra vez";
+    el("gravOuvir").hidden = false; el("gravGuardar").hidden = false;
+    gravNota("Gravaste " + mmss(gravSeg) + ". Ouve e, se estiver bem, guarda.");
+  };
+  gravSeg = 0; gravRec.start();
+  el("gravGravar").textContent = "Parar (0:00)"; el("gravOuvir").hidden = true; el("gravGuardar").hidden = true;
+  gravNota("A gravar. Responde à pergunta, sem pressa. Para sozinho aos 3 minutos.");
+  gravTimer = setInterval(() => { gravSeg++; el("gravGravar").textContent = "Parar (" + mmss(gravSeg) + ")"; if (gravSeg >= 180) gravRec.stop(); }, 1000);
+};
+function tocar(url){ if (gravAudio) gravAudio.pause(); gravAudio = new Audio(url); gravAudio.play().catch(() => toast("Não consegui tocar a gravação.")); }
+el("gravOuvir").onclick = () => { if (gravUrl) tocar(gravUrl); };
+el("gravGuardar").onclick = async () => {
+  if (!gravBlob) return;
+  if (!online()) return gravNota("Para guardar a gravação, liga primeiro a app ao GitHub (Guia → GitHub).");
+  const b = el("gravGuardar"); b.disabled = true; b.textContent = "A enviar…";
+  const mes = hoje().slice(0, 7), ext = /mp4|aac|m4a/.test(gravBlob.type) ? "m4a" : /ogg/.test(gravBlob.type) ? "ogg" : "webm";
+  const path = "gravacoes/" + mes + "." + ext;
+  try {
+    let sha;
+    try { sha = (await (await ghFicheiro(path)).json()).sha; } catch (e) { if (e.status !== 404) throw e; }
+    await ghFicheiro(path, {method: "PUT", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(Object.assign({message: "Gravação de " + mes, content: await blobB64(gravBlob)}, sha ? {sha} : {}))});
+    registar([["gravacao", {g: {mes, d: hoje(), path, seg: gravSeg, tipo: gravBlob.type}}]], "Gravação de " + mes);
+    gravBlob = null; el("gravGuardar").hidden = true; el("gravOuvir").hidden = true; el("gravGravar").textContent = "Gravar";
+    gravNota("Guardada. Volta no próximo mês.");
+  } catch (e) {
+    console.error(e);
+    gravNota(e instanceof GhError ? ghMsg(e) : "Não consegui enviar. Tenta outra vez com rede.");
+  }
+  b.disabled = false; b.textContent = "Guardar a gravação";
+};
+const cacheAudio = {};
+function renderGravacoes(){
+  const l = S.gravacoes.slice().reverse();
+  el("gravLista").innerHTML = l.length ? l.map((g, i) => '<li><div><span>' + MESES[+g.mes.slice(5) - 1] + " " + g.mes.slice(0, 4) + (i === l.length - 1 && l.length > 1 ? ' <span class="pill teal">a primeira</span>' : "") + '</span><span class="small muted">' + mmss(g.seg || 0) + '</span></div>' +
+    '<button class="btn sm" type="button" data-grav="' + esc(g.path) + '">Ouvir</button></li>').join("")
+    : '<li><span class="small muted">Ainda não há gravações. A primeira é o ponto de partida.</span></li>';
+  el("gravLista").querySelectorAll("[data-grav]").forEach(b => b.onclick = async () => {
+    const path = b.dataset.grav;
+    if (cacheAudio[path]) return tocar(cacheAudio[path]);
+    if (!online()) return toast("Liga a app ao GitHub para ouvir as gravações.");
+    b.disabled = true; b.textContent = "A carregar…";
+    try {
+      const r = await ghFicheiro(path, {headers: {"Accept": "application/vnd.github.raw+json"}});
+      cacheAudio[path] = URL.createObjectURL(await r.blob());
+      tocar(cacheAudio[path]);
+    } catch (e) { toast(e instanceof GhError ? ghMsg(e) : "Não consegui carregar a gravação."); }
+    b.disabled = false; b.textContent = "Ouvir";
+  });
+}
+el("btnIrGravar").onclick = () => { mostrar("prog"); setTimeout(() => el("gravSec").scrollIntoView({behavior: "smooth"}), 50); };
 
 /* ================= Lembrete no calendário ================= */
 const APP_URL = "https://oakshift.github.io/fluente/";
