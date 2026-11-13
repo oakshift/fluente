@@ -1,5 +1,5 @@
 /* Rede primeiro, cópia guardada se não houver: a app tem sempre a versão mais recente e abre sem rede. */
-const CACHE = "fluente-v2";
+const CACHE = "fluente-v3";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon.svg"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });

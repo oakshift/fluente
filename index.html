@@ -250,10 +250,13 @@
         </div></div>
         <div class="step"><div>
           <h3>No fim, traz o relatório</h3>
-          <p class="small muted">Diz <b lang="en">“end session”</b>. O Claude passa para texto e escreve o relatório. Copia a resposta toda e cola aqui.</p>
-          <textarea id="relatorio" placeholder="Cola aqui a resposta do Claude…" lang="en"></textarea>
+          <p class="small muted">Diz <b lang="en">“end session”</b>. O Claude passa para texto e escreve o relatório. Copia a resposta (dedo em cima dela → Copiar), volta aqui e toca em <b>Colar do Claude</b>.</p>
           <label class="fl">Minutos a falar<input type="number" id="relMin" min="1" max="240" inputmode="numeric"></label>
-          <button class="btn primary wide" type="button" id="btnLerRel">Ler o relatório</button>
+          <button class="btn primary wide" type="button" id="btnColar">Colar do Claude</button>
+          <details id="colarMao"><summary class="small">Colar à mão</summary><div class="inner">
+            <textarea id="relatorio" placeholder="Cola aqui a resposta do Claude…" lang="en"></textarea>
+            <button class="btn wide" type="button" id="btnLerRel">Ler o relatório</button>
+          </div></details>
           <div id="relPreview" hidden></div>
           <details><summary class="small">Sem relatório? Registar só os minutos</summary><div class="inner">
             <button class="btn wide" type="button" id="btnSoMin">Registar a conversa sem relatório</button>
@@ -329,6 +332,14 @@
       <h2>Kit de conversa</h2>
       <p class="small muted">Frases para ganhar tempo, pedir ajuda e manter a conversa a andar. Toca no altifalante para ouvir.</p>
       <div id="kit" style="display:grid;gap:8px"></div>
+    </div>
+    <div class="card">
+      <details id="sobreBox"><summary>O que o Claude sabe de ti <span class="small muted num" id="sobreN"></span></summary><div class="inner">
+        <p class="small muted">Vem dos relatórios e vai em cada conversa, para o Claude puxar pelo que lhe contaste antes. Apaga o que não quiseres que ele saiba.</p>
+        <ul class="list" id="sobreLista"></ul>
+        <label class="fl">Acrescentar, em inglês<input type="text" id="sobreNovo" lang="en" placeholder="Works as a music teacher"></label>
+        <button class="btn" type="button" id="btnSobreAdd">Acrescentar</button>
+      </div></details>
     </div>
     <div class="card">
       <details><summary>Falsos amigos</summary><div class="inner">
@@ -573,13 +584,13 @@ const ls = {
 /* ================= Dados ================= */
 function vazio(){
   return {versao: 1, inicio: hoje(), cfg: {nivel: "B1", explic: "pt", objetivo: "", meta: 90, voz: "en-GB"},
-          sessoes: [], cartoes: {}, ativ: {}, naoSubir: ""};
+          sessoes: [], cartoes: {}, ativ: {}, naoSubir: "", sobre: []};
 }
 function completo(d){
   const v = vazio();
   d = d && typeof d === "object" ? d : {};
   d.cfg = Object.assign(v.cfg, d.cfg || {});
-  for (const k of ["sessoes"]) if (!Array.isArray(d[k])) d[k] = [];
+  for (const k of ["sessoes", "sobre"]) if (!Array.isArray(d[k])) d[k] = [];
   for (const k of ["cartoes", "ativ"]) if (!d[k] || typeof d[k] !== "object") d[k] = {};
   if (!d.inicio) d.inicio = v.inicio;
   if (d.naoSubir === undefined) d.naoSubir = "";
@@ -606,7 +617,16 @@ const OPS = {
   rever(d, {id, dia, estado}){ if (d.cartoes[id]) { Object.assign(d.cartoes[id], estado); d.ativ[dia] = true; } },
   apagarCartao(d, {id}){ delete d.cartoes[id]; },
   cfg(d, {c}){ Object.assign(d.cfg, c); },
-  naoSubir(d, {dia}){ d.naoSubir = dia; }
+  naoSubir(d, {dia}){ d.naoSubir = dia; },
+  // factos sobre mim que o Claude ouviu nas conversas; juntar não duplica
+  factos(d, {lista, dia}){
+    for (const t of lista){
+      const k = t.toLowerCase();
+      if (!d.sobre.some(f => f.t.toLowerCase() === k)) d.sobre.push({t, d: dia});
+    }
+    if (d.sobre.length > 40) d.sobre = d.sobre.slice(-40);
+  },
+  apagarFacto(d, {t}){ d.sobre = d.sobre.filter(f => f.t !== t); }
 };
 
 /* ================= GitHub ================= */
@@ -757,11 +777,13 @@ const devidos = () => Object.values(S.cartoes).filter(c => (c.prox || "") <= hoj
   .sort((a, b) => ((a.ult === hoje()) - (b.ult === hoje())) || (a.prox || "").localeCompare(b.prox || "") || (a.criado || "").localeCompare(b.criado || ""));
 const aprendido = c => (c.int || 0) >= 21;
 
-function novoCartao(tipo, frente, verso, ex){
+function novoCartao(tipo, frente, verso, ex, pt){
   frente = norm(frente); verso = norm(verso);
   if (!frente || !verso) return null;
   const id = hashId(tipo + "|" + frente.toLowerCase());
-  return {id, tipo, frente, verso, ex: norm(ex), criado: hoje(), prox: hoje(), int: 0, ef: 2.5, reps: 0, lapsos: 0};
+  const c = {id, tipo, frente, verso, ex: norm(ex), criado: hoje(), prox: hoje(), int: 0, ef: 2.5, reps: 0, lapsos: 0};
+  if (tipo === "erro" && norm(pt)) c.pt = norm(pt);
+  return c;
 }
 
 /* ================= Mensagem para o Claude ================= */
@@ -796,6 +818,10 @@ function construirPrompt(){
   L.push("- If I say a word in Portuguese, tell me the English word and ask me to say the whole sentence again.");
   L.push("");
   L.push("Today's session: " + descricaoSessao(t));
+  const factos = S.sobre.slice(-15).map(f => f.t);
+  if (factos.length) L.push("What you know about me from earlier sessions. Bring it up naturally and ask how things are going, as a friend would, but don't recite it: " + factos.join("; ") + ".");
+  const ult = S.sessoes.filter(x => x.foco).slice(-1)[0];
+  if (ult && modo !== "nivel") L.push("In our last session (" + ult.d + ", " + (ult.tema || "conversation") + ") you said my focus should be: " + ult.foco + " Steer today's conversation so I get to practise that.");
   const pal = palavrasEmTreino();
   if (pal.length && modo !== "nivel") L.push("Words and expressions I'm learning. Create chances for me to use them naturally, without listing them: " + pal.join("; ") + ".");
   const er = errosRecentes(modo === "revisao" ? 8 : 4);
@@ -803,9 +829,9 @@ function construirPrompt(){
   L.push("");
   L.push("When I say \"end session\" (or \"terminar\"), stop the conversation and reply in writing with:");
   L.push("1. Three short lines: what went well, what to improve, and the focus for next time.");
-  L.push("2. A JSON code block in exactly this format, with up to 8 mistakes I really made (my words, then the natural version) and up to 8 useful words or expressions from today that I didn't know or used wrongly:");
-  L.push('{"fluente":1,"tema":"' + (t ? t.t.replace(/"/g, "'") : "free talk") + '","nivel_estimado":"B1","pontos_fortes":"…","melhorar":"…","proximo_foco":"…","erros":[{"disse":"…","correto":"…","porque":"…"}],"palavras":[{"en":"…","pt":"…","exemplo":"…"}]}');
-  L.push("Write \"pontos_fortes\", \"melhorar\", \"proximo_foco\", \"porque\" and \"pt\" in European Portuguese. \"nivel_estimado\" is your honest CEFR estimate of my speaking today (A2, B1, B2, C1 or C2).");
+  L.push("2. A JSON code block in exactly this format, with up to 8 mistakes I really made (my words, the natural version, and what I meant to say in Portuguese), up to 8 useful words or expressions from today that I didn't know or used wrongly, and up to 5 new facts about my life that I mentioned today and that are not in the list above:");
+  L.push('{"fluente":2,"tema":"' + (t ? t.t.replace(/"/g, "'") : "free talk") + '","nivel_estimado":"B1","pontos_fortes":"…","melhorar":"…","proximo_foco":"…","erros":[{"disse":"…","correto":"…","pt":"…","porque":"…"}],"palavras":[{"en":"…","pt":"…","exemplo":"…"}],"sobre_mim":["…"]}');
+  L.push("Write \"pontos_fortes\", \"melhorar\", \"proximo_foco\", \"porque\" and every \"pt\" in European Portuguese. In each mistake, \"pt\" is the whole sentence I was trying to say, translated naturally into Portuguese. Write \"sobre_mim\" in English, one short fact each (for example \"Has a son, Pedro, aged 8\"). \"nivel_estimado\" is your honest CEFR estimate of my speaking today (A2, B1, B2, C1 or C2).");
   L.push("");
   L.push("Start now with your first question.");
   return L.join("\n");
@@ -851,7 +877,8 @@ function previewRelatorio(j){
   const erros = (Array.isArray(j.erros) ? j.erros : []).filter(e => e && e.disse && e.correto).slice(0, 12);
   const pals = (Array.isArray(j.palavras) ? j.palavras : []).filter(p => p && p.en && p.pt).slice(0, 12);
   const nivel = NIVEIS.includes(String(j.nivel_estimado || "").toUpperCase()) ? String(j.nivel_estimado).toUpperCase() : "";
-  relPendente = {j, erros, pals, nivel};
+  const sobre = (Array.isArray(j.sobre_mim) ? j.sobre_mim : []).map(norm).filter(Boolean).slice(0, 8);
+  relPendente = {j, erros, pals, nivel, sobre};
   const p = el("relPreview");
   p.innerHTML =
     '<div class="card" style="background:var(--sunk);border:0;gap:8px">' +
@@ -859,6 +886,7 @@ function previewRelatorio(j){
     (j.pontos_fortes ? '<p class="small"><b>Correu bem:</b> ' + esc(j.pontos_fortes) + '</p>' : "") +
     (j.melhorar ? '<p class="small"><b>A melhorar:</b> ' + esc(j.melhorar) + '</p>' : "") +
     (j.proximo_foco ? '<p class="small"><b>Próximo foco:</b> ' + esc(j.proximo_foco) + '</p>' : "") +
+    (sobre.length ? '<p class="small"><b>O Claude fica a saber:</b> <span lang="en">' + sobre.map(esc).join("; ") + '</span></p>' : "") +
     '<p class="small muted">Vão para a revisão ' + erros.length + ' erro' + (erros.length === 1 ? "" : "s") + ' e ' + pals.length + ' palavra' + (pals.length === 1 ? "" : "s") + '.</p>' +
     '<button class="btn primary wide" type="button" id="btnGuardarRel">Guardar a conversa</button></div>';
   p.hidden = false;
@@ -879,12 +907,13 @@ function guardarSessao(extra){
 }
 function guardarRelatorio(){
   if (!relPendente) return;
-  const {j, erros, pals, nivel} = relPendente;
+  const {j, erros, pals, nivel, sobre} = relPendente;
   const r = guardarSessao({nivel, fortes: norm(j.pontos_fortes), melhorar: norm(j.melhorar), foco: norm(j.proximo_foco),
-    erros: erros.map(e => ({disse: norm(e.disse), correto: norm(e.correto), porque: norm(e.porque)})),
+    erros: erros.map(e => ({disse: norm(e.disse), correto: norm(e.correto), pt: norm(e.pt), porque: norm(e.porque)})),
     palavras: pals.map(p => ({en: norm(p.en), pt: norm(p.pt)}))});
   if (!r) return;
-  for (const e of erros){ const c = novoCartao("erro", e.disse, e.correto, e.porque); if (c) r.ops.push(["cartao", {c}]); }
+  for (const e of erros){ const c = novoCartao("erro", e.disse, e.correto, e.porque, e.pt); if (c) r.ops.push(["cartao", {c}]); }
+  if (sobre.length) r.ops.push(["factos", {lista: sobre, dia: hoje()}]);
   for (const p of pals){ const c = novoCartao("palavra", p.en, p.pt, p.exemplo); if (c) r.ops.push(["cartao", {c}]); }
   registar(r.ops, "Conversa: " + r.s.tema);
   limparConversa();
@@ -982,11 +1011,17 @@ function renderRever(){
       '<p class="small muted">' + (total ? (revFeitos ? revFeitos + " revistos nesta sessão. " : "") + "Amanhã há mais." : "Depois de cada conversa, os erros e as palavras novas do relatório aparecem aqui. Também podes acrescentar palavras à mão.") + '</p></div></div>';
   } else {
     const c = revAtual, erro = c.tipo === "erro";
+    // Erro: a frente é o que querias dizer, em português; a frase errada só aparece no verso.
+    // Cartões antigos sem tradução continuam a mostrar a frase errada para corrigir.
     const frente = erro
-      ? '<span class="pill red">Corrige</span><p class="front" lang="en">' + esc(c.frente) + '</p><p class="small muted">Diz em voz alta a versão certa e depois vira o cartão.</p>'
+      ? (c.pt
+          ? '<span class="pill red">Diz bem em inglês</span><p class="front">' + esc(c.pt) + '</p><p class="small muted">Já erraste esta. Diz em voz alta e depois vira o cartão.</p>'
+          : '<span class="pill red">Corrige</span><p class="front" lang="en">' + esc(c.frente) + '</p><p class="small muted">Diz em voz alta a versão certa e depois vira o cartão.</p>')
       : '<span class="pill teal">Diz em inglês</span><p class="front">' + esc(c.verso) + '</p>';
     const verso = erro
-      ? '<div class="fix"><span class="ok en" lang="en">' + esc(c.verso) + '</span>' + (c.ex ? '<span class="small muted">' + esc(c.ex) + '</span>' : "") + '</div>'
+      ? '<div class="fix"><span class="ok en" lang="en">' + esc(c.verso) + '</span>' +
+        (c.pt ? '<span class="small muted">Tinhas dito: <s lang="en">' + esc(c.frente) + '</s></span>' : "") +
+        (c.ex ? '<span class="small muted">' + esc(c.ex) + '</span>' : "") + '</div>'
       : '<div class="fix"><span class="ok en" lang="en">' + esc(c.frente) + '</span>' + (c.ex ? '<span class="small muted" lang="en">' + esc(c.ex) + '</span>' : "") + '</div>';
     area.innerHTML = '<div class="flash"><div class="back">' + frente + '</div>' +
       (revVirado ? '<div class="back" style="width:100%"><div class="row" style="flex-wrap:nowrap;justify-content:center">' + verso + '<button class="speak" type="button" id="revOuvir" aria-label="Ouvir">' + ICON_SOM + '</button></div></div>' : "") + '</div>' +
@@ -1096,7 +1131,16 @@ function renderGuia(){
   document.querySelectorAll("#v-guia [data-falar]").forEach(b => b.onclick = () => falar(b.dataset.falar));
   renderAjustes();
 }
+function renderSobre(){
+  el("sobreN").textContent = S.sobre.length ? "(" + S.sobre.length + ")" : "";
+  el("sobreLista").innerHTML = S.sobre.length ? S.sobre.slice().reverse().map(f =>
+    '<li><div><span lang="en">' + esc(f.t) + '</span><span class="small muted">' + curto(f.d) + '</span></div>' +
+    '<button class="btn ghost sm" type="button" data-facto="' + esc(f.t) + '">Apagar</button></li>').join("")
+    : '<li><span class="small muted">Ainda nada. Enche-se com as próximas conversas.</span></li>';
+  el("sobreLista").querySelectorAll("[data-facto]").forEach(b => b.onclick = () => registar([["apagarFacto", {t: b.dataset.facto}]], "Esquecer facto"));
+}
 function renderAjustes(){
+  renderSobre();
   el("cfgNivel").value = S.cfg.nivel; el("cfgExplic").value = S.cfg.explic; el("cfgObjetivo").value = S.cfg.objetivo || "";
   el("cfgMeta").value = S.cfg.meta; el("cfgVoz").value = S.cfg.voz;
   el("cfgRepo").value = cfg.repo || DEFAULT_REPO;
@@ -1154,13 +1198,33 @@ el("btnCopiar").onclick = async () => {
   toast(ok ? "Mensagem copiada." : "Não deu para copiar: abre “Ver a mensagem” e copia à mão.");
   marcarInicio();
 };
+el("btnSobreAdd").onclick = () => {
+  const t = norm(el("sobreNovo").value);
+  if (!t) return toast("Escreve o facto primeiro.");
+  registar([["factos", {lista: [t], dia: hoje()}]], "Novo facto");
+  el("sobreNovo").value = "";
+};
+el("btnColar").onclick = async () => {
+  let txt = "";
+  try { txt = await navigator.clipboard.readText(); } catch (e) {}
+  if (!txt || !txt.trim()) {
+    el("colarMao").open = true; el("relatorio").focus();
+    return toast("Não consegui ler o que copiaste. Cola à mão na caixa.");
+  }
+  el("relatorio").value = txt;
+  lerEMostrar(txt);
+};
 el("btnLerRel").onclick = () => {
   const txt = el("relatorio").value;
   if (!txt.trim()) return toast("Cola primeiro a resposta do Claude.");
+  lerEMostrar(txt);
+};
+function lerEMostrar(txt){
   const j = lerRelatorio(txt);
   if (!j) { el("relPreview").hidden = false; el("relPreview").innerHTML = '<p class="small" style="color:var(--red)">Não encontrei o bloco de dados do relatório. Pede ao Claude: <i lang="en">“Please write the JSON report again, in a code block.”</i> e cola a resposta nova.</p>'; return; }
   previewRelatorio(j);
-};
+  el("relPreview").scrollIntoView({behavior: "smooth", block: "nearest"});
+}
 el("btnSoMin").onclick = () => {
   const r = guardarSessao({});
   if (!r) return;
